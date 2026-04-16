@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIG Client Communications</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0D2137;--blue:#2B5C81;--teal:#278989;--iron:#465459;--slate:#EAE9EB;--slate-mid:#D8DADC;--slate-light:#F4F5F6;--white:#FFFFFF;--off:#F7F8F9;--text:#1A1A1A;--text-mid:#465459;--text-light:#7A8A90;--red:#C0392B;--amber:#C97A0A;--green:#1A7A4A;--red-bg:#FDF1F0;--amber-bg:#FDF6E8;--green-bg:#EEF7F2;--rc:'Roboto Condensed',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Roboto',sans-serif;background:var(--off);color:var(--text);min-height:100vh;}
+.hdr{background:var(--navy);border-bottom:3px solid var(--blue);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-brand{font-family:var(--rc);font-weight:700;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--white);}
+.hdr-tool{font-family:var(--rc);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35);background:rgba(255,255,255,.06);padding:4px 10px;border-radius:2px;}
+.hdr-user{font-family:var(--rc);font-weight:700;font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.06em;}
+.team-bar{background:var(--white);border-bottom:1px solid var(--slate-mid);padding:10px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.team-bar-label{font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);margin-right:4px;}
+.team-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--slate-mid);background:var(--white);cursor:pointer;font-size:12px;transition:all .15s;}
+.team-chip.active{background:var(--navy);border-color:var(--navy);color:var(--white);}
+.team-chip-av{width:20px;height:20px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--rc);font-weight:700;font-size:9px;color:var(--white);}
+.team-chip.active .team-chip-av{background:rgba(255,255,255,.2);}
+.team-chip-role{font-size:10px;color:var(--text-light);}
+.team-chip.active .team-chip-role{color:rgba(255,255,255,.5);}
+.view{display:none;}.view.active{display:block;}
+.main{max-width:1080px;margin:0 auto;padding:28px 24px 80px;}
+.sec-label{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;}
+.aq{background:var(--white);border:1px solid var(--slate-mid);border-radius:4px;margin-bottom:26px;overflow:hidden;}
+.aq-hdr{background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+.aq-title{font-family:var(--rc);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--white);display:flex;align-items:center;gap:8px;}
+.aq-badge{background:var(--red);color:var(--white);font-family:var(--rc);font-weight:700;font-size:10px;padding:2px 7px;border-radius:10px;}
+.aq-item{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--slate-light);cursor:pointer;transition:background .15s;}
+.aq-item:last-child{border-bottom:none;}
+.aq-item:hover{background:var(--off);}
+.aq-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.aq-content{flex:1;}
+.aq-listing{font-size:13px;font-weight:500;color:var(--navy);}
+.aq-sub{font-size:11px;color:var(--text-light);}
+.aq-btn{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);background:none;border:none;cursor:pointer;white-space:nowrap;}
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.lcard{background:var(--white);border:1px solid var(--slate-mid);border-radius:4px;overflow:hidden;cursor:pointer;transition:all .15s;}
+.lcard:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(43,92,129,.1);transform:translateY(-1px);}
+.lcard-top{padding:14px 16px 10px;}
+.lcard-name{font-family:var(--rc);font-weight:700;font-size:14px;color:var(--navy);margin-bottom:3px;line-height:1.3;}
+.lcard-addr{font-size:11px;color:var(--text-light);margin-bottom:10px;}
+.lcard-stats{display:flex;gap:14px;}
+.lcard-stat-val{font-family:var(--rc);font-weight:700;font-size:15px;color:var(--navy);}
+.lcard-stat-lbl{font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em;}
+.lcard-bottom{padding:8px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--slate-light);}
+.lcard-next{display:inline-flex;align-items:center;gap:5px;font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
+.detail-view{max-width:1080px;margin:0 auto;padding:24px 24px 80px;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);background:none;border:none;cursor:pointer;margin-bottom:20px;padding:0;}
+.detail-card{background:var(--white);border:1px solid var(--slate-mid);border-radius:4px;overflow:hidden;}
+.detail-hdr{background:var(--navy);padding:20px 24px;}
+.detail-title{font-family:var(--rc);font-weight:700;font-size:22px;color:var(--white);margin-bottom:4px;}
+.detail-addr{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;}
+.detail-stats{display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap;}
+.detail-stat-val{font-family:var(--rc);font-weight:700;font-size:16px;color:var(--white);}
+.detail-stat-lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;}
+.detail-body{display:flex;flex-direction:column;}
+.detail-top-blades{padding:16px 22px;border-bottom:1px solid var(--slate-light);display:flex;gap:14px;flex-wrap:wrap;background:var(--off);}
+.detail-bottom{display:grid;grid-template-columns:1fr 280px;min-height:400px;}
+.tl-col{padding:22px;border-right:1px solid var(--slate-light);overflow-y:auto;max-height:65vh;}
+.ap-col{padding:16px;background:var(--off);display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:65vh;}
+.action-needed-box{background:var(--red-bg);border:1px solid #E8C0BB;border-left:4px solid var(--red);border-radius:3px;padding:12px 14px;margin-bottom:10px;}
+.action-needed-hdr{display:flex;align-items:center;gap:6px;font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:8px;}
+.action-needed-btn{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--white);border:1px solid #E8C0BB;border-radius:3px;cursor:pointer;width:100%;margin-bottom:6px;text-align:left;}
+.action-needed-btn:last-child{margin-bottom:0;}
+.action-needed-btn:hover{border-color:var(--red);background:var(--red-bg);}
+.action-needed-btn-name{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);flex:1;}
+.scheduled-box{background:#EEF4F9;border:1px solid #C0D4E8;border-left:4px solid var(--blue);border-radius:3px;padding:10px 12px;margin-bottom:10px;}
+.scheduled-hdr{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;}
+.scheduled-item{font-size:11px;color:var(--text-mid);margin-bottom:3px;display:flex;align-items:center;gap:5px;}
+.timeline-plan{background:var(--off);border:1px solid var(--slate);border-radius:3px;padding:12px 14px;margin-bottom:10px;}
+.timeline-plan-hdr{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+.timeline-plan-item{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px;font-size:11px;}
+.timeline-plan-date{font-family:var(--rc);font-weight:700;font-size:10px;color:var(--navy);min-width:60px;}
+.timeline-plan-label{color:var(--text-mid);}
+.ap-section-label{font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);margin:8px 0 6px;padding-top:8px;border-top:1px solid var(--slate);}
+.ap-section-label:first-of-type{border-top:none;margin-top:0;padding-top:0;}
+.comm-btn{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--white);border:1px solid var(--slate-mid);border-radius:3px;cursor:pointer;transition:all .15s;text-align:left;width:100%;}
+.comm-btn:hover{border-color:var(--blue);}
+.comm-btn-icon{width:24px;height:24px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.comm-btn-name{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);flex:1;}
+.optional-tag{font-family:var(--rc);font-weight:700;font-size:8px;color:var(--text-light);flex-shrink:0;}
+.tl-section{margin-bottom:16px;}
+.tl-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--slate);}
+.tl-section-title{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);}
+.tl-section-toggle{font-size:11px;color:var(--text-light);}
+.tl-section-body{padding-top:12px;}
+.tl-item{display:flex;gap:12px;margin-bottom:16px;position:relative;}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:10px;top:22px;bottom:-16px;width:1px;background:var(--slate);}
+.tl-dot{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.tl-dot-sent{background:var(--green-bg);border:2px solid var(--green);}
+.tl-dot-scheduled{background:#EEF4F9;border:2px solid var(--blue);}
+.tl-content{flex:1;}
+.tl-type{font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:1px;}
+.tl-desc{font-size:13px;color:var(--navy);font-weight:500;margin-bottom:2px;}
+.tl-meta{font-size:11px;color:var(--text-light);display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.tl-by{color:var(--teal);font-size:10px;}
+.tl-preview{background:var(--off);border:1px solid var(--slate);border-radius:3px;padding:8px 10px;margin-top:6px;font-size:12px;color:var(--text-mid);line-height:1.6;cursor:pointer;}
+.tl-preview:hover{border-color:var(--blue);}
+.tabs{display:flex;border-bottom:2px solid var(--blue);margin-bottom:24px;}
+.tab{font-family:var(--rc);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:9px 18px;border:none;border-bottom:3px solid transparent;background:transparent;cursor:pointer;color:var(--text-light);margin-bottom:-2px;transition:all .15s;}
+.tab.active{color:var(--navy);border-bottom-color:var(--teal);}
+.hist-section-label{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);padding:8px 0;border-bottom:1px solid var(--slate);margin-bottom:10px;}
+.hist-item{background:var(--white);border:1px solid var(--slate-mid);border-radius:4px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;}
+.hist-item.scheduled{border-left:3px solid var(--blue);}
+.hist-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.hist-main{flex:1;}
+.hist-type{font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:2px;}
+.hist-subject{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:3px;}
+.hist-meta{font-size:11px;color:var(--text-light);}
+.overlay{position:fixed;inset:0;background:rgba(13,33,55,.72);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--white);border-radius:4px;width:100%;max-width:700px;max-height:92vh;display:flex;flex-direction:column;}
+.modal-hdr{background:var(--navy);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:4px 4px 0 0;}
+.modal-title{font-family:var(--rc);font-weight:700;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--white);}
+.modal-x{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:22px;line-height:1;}
+.modal-body{padding:22px;overflow-y:auto;flex:1;}
+.modal-ftr{padding:14px 22px;background:var(--off);border-top:1px solid var(--slate);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;border-radius:0 0 4px 4px;}
+.send-overlay{position:fixed;inset:0;background:rgba(13,33,55,.88);z-index:300;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.send-card{background:var(--white);border-radius:6px;padding:40px 48px;text-align:center;max-width:440px;width:100%;position:relative;z-index:2;}
+.send-icon{width:60px;height:60px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;}
+.send-title{font-family:var(--rc);font-weight:700;font-size:18px;color:var(--navy);margin-bottom:8px;letter-spacing:.04em;}
+.send-sub{font-size:13px;color:var(--text-mid);line-height:1.65;margin-bottom:14px;}
+.send-signal{font-size:11px;color:var(--green);background:var(--green-bg);border:1px solid #B8DFC8;border-radius:3px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px;margin-bottom:8px;}
+.send-gmail-note{font-size:11px;color:var(--text-light);margin-bottom:18px;font-style:italic;}
+.confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:1;}
+.f-label{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--iron);display:block;margin-bottom:5px;}
+.f-input{width:100%;padding:9px 12px;font-family:'Roboto',sans-serif;font-size:13px;color:var(--navy);background:var(--white);border:1px solid var(--slate-mid);border-radius:3px;margin-bottom:12px;}
+.f-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(43,92,129,.1);}
+textarea.f-input{resize:vertical;min-height:72px;line-height:1.6;font-weight:300;}
+.f-readonly{padding:9px 12px;font-size:13px;color:var(--text-mid);background:var(--off);border:1px solid var(--slate);border-radius:3px;margin-bottom:12px;font-weight:300;line-height:1.5;}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.f-sec-title{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);border-bottom:1px solid var(--slate);padding-bottom:5px;margin:16px 0 12px;}
+.f-sec-title:first-child{margin-top:0;}
+.on-behalf{background:#F0F9F9;border:1px solid rgba(39,137,137,.3);border-radius:3px;padding:9px 13px;margin-bottom:14px;font-size:12px;color:var(--teal);display:flex;align-items:center;gap:8px;}
+.pref-banner{background:var(--off);border:1px solid var(--slate-mid);border-left:3px solid var(--teal);border-radius:3px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--text-mid);}
+.pref-banner strong{color:var(--teal);}
+.email-header-box{background:var(--off);border:1px solid var(--slate-mid);border-radius:3px;padding:12px 14px;margin-bottom:14px;}
+.email-hdr-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.email-hdr-row:last-child{margin-bottom:0;}
+.email-hdr-label{font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);min-width:48px;}
+.email-hdr-val{flex:1;font-size:13px;color:var(--navy);background:var(--white);border:1px solid var(--slate-mid);border-radius:2px;padding:5px 9px;}
+.email-hdr-val:focus{outline:none;border-color:var(--blue);}
+.gen-email{background:var(--off);border:1px solid var(--slate-mid);border-radius:3px;padding:14px;}
+.gen-body{font-size:13px;color:var(--text);line-height:1.8;white-space:pre-wrap;font-weight:300;}
+.attach-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--off);border:1px dashed var(--slate-mid);border-radius:3px;margin-bottom:12px;cursor:pointer;transition:all .15s;}
+.attach-row:hover{border-color:var(--blue);}
+.attach-label{font-size:12px;color:var(--text-mid);flex:1;}
+.attach-tag{font-family:var(--rc);font-weight:700;font-size:9px;color:var(--blue);background:#EEF4F9;border:1px solid #C0D4E8;padding:2px 6px;border-radius:2px;}
+/* BIWEEKLY SPECIFIC */
+.bw-snapshot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.bw-stat{background:var(--off);border-top:3px solid var(--blue);border-radius:3px;padding:11px 13px;}
+.bw-stat-val{font-family:var(--rc);font-weight:700;font-size:17px;color:var(--navy);}
+.bw-stat-lbl{font-size:9px;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em;}
+.bw-stat-val.warn-red{color:var(--red);}
+.bw-stat-val.warn-amber{color:var(--amber);}
+.bw-platform{background:var(--navy);border-radius:4px;padding:14px 16px;margin-bottom:16px;}
+.bw-platform-title{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:6px;margin-bottom:10px;}
+.bw-platform-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bw-platform-stat{background:rgba(255,255,255,.06);border-radius:3px;padding:10px 12px;border-bottom:2px solid var(--blue);}
+.bw-platform-val{font-family:var(--rc);font-weight:700;font-size:18px;color:var(--white);}
+.bw-platform-lbl{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.toggle-row{display:flex;gap:8px;margin-bottom:14px;}
+.toggle-btn{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 14px;border-radius:3px;border:1px solid var(--slate-mid);background:transparent;color:var(--text-mid);cursor:pointer;transition:all .15s;}
+.toggle-btn.on{background:var(--blue);border-color:var(--blue);color:var(--white);}
+.team-checkbox{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--white);border:1px solid var(--slate-mid);border-radius:3px;margin-bottom:6px;cursor:pointer;}
+.team-checkbox input{width:16px;height:16px;cursor:pointer;}
+.team-checkbox-name{font-size:13px;color:var(--navy);font-weight:500;}
+.team-checkbox-role{font-size:11px;color:var(--text-light);}
+.btn{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:9px 18px;border-radius:3px;cursor:pointer;border:none;transition:filter .15s;}
+.btn:hover{filter:brightness(.92);}
+.btn-primary{background:var(--navy);color:var(--white);}
+.btn-accent{background:var(--blue);color:var(--white);}
+.btn-ghost{background:transparent;color:var(--iron);border:1px solid var(--slate-mid);}
+.btn-green{background:var(--green);color:var(--white);}
+.btn-sm{padding:6px 12px;font-size:9px;}
+.load-bar{width:44px;height:2px;background:var(--blue);animation:load 1.4s ease-in-out infinite;display:inline-block;}
+@keyframes load{0%,100%{opacity:.2;transform:scaleX(.4);}50%{opacity:1;transform:scaleX(1);}}
+.generating{display:flex;align-items:center;gap:12px;padding:24px;}
+.gen-txt{font-family:var(--rc);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-light);}
+.pill{display:inline-flex;align-items:center;font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;}
+.pill-red{background:var(--red-bg);color:var(--red);border:1px solid #E8C0BB;}
+.pill-amber{background:var(--amber-bg);color:var(--amber);border:1px solid #E8D0A0;}
+.pill-green{background:var(--green-bg);color:var(--green);border:1px solid #B8DFC8;}
+.pill-blue{background:#EEF4F9;color:var(--blue);border:1px solid #C0D4E8;}
+.search-input{width:100%;padding:9px 14px;font-family:'Roboto',sans-serif;font-size:13px;border:1px solid var(--slate-mid);border-radius:3px;background:var(--white);color:var(--navy);margin-bottom:16px;}
+.search-input:focus{outline:none;border-color:var(--blue);}
+
+.rte-toolbar{display:flex;gap:4px;padding:6px 10px;background:var(--off);border:1px solid var(--slate-mid);border-bottom:none;border-radius:3px 3px 0 0;flex-wrap:wrap;}
+.rte-btn{background:var(--white);border:1px solid var(--slate-mid);border-radius:2px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--navy);transition:all .15s;min-width:28px;text-align:center;}
+.rte-btn:hover{background:var(--blue);color:var(--white);border-color:var(--blue);}
+.rte-btn.active{background:var(--navy);color:var(--white);border-color:var(--navy);}
+.rte-sep{width:1px;background:var(--slate-mid);margin:2px 4px;}
+.gen-email-editable{background:var(--off);border:1px solid var(--slate-mid);border-radius:0 0 3px 3px;padding:14px;}
+
+/* ONBOARDING WELCOME */
+.onb-overlay{position:fixed;inset:0;background:rgba(13,33,55,.92);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+.onb-card{background:var(--white);border-radius:6px;width:100%;max-width:780px;overflow:hidden;}
+.onb-hdr{background:var(--navy);padding:28px 36px 20px;}
+.onb-logo{font-family:var(--rc);font-weight:700;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;}
+.onb-headline{font-family:var(--rc);font-weight:700;font-size:26px;color:var(--white);margin-bottom:4px;}
+.onb-sub{font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;}
+.onb-panels{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--slate);}
+.onb-panel{padding:20px 24px;border-right:1px solid var(--slate);border-bottom:1px solid var(--slate);}
+.onb-panel:nth-child(2n){border-right:none;}
+.onb-panel:nth-child(n+3){border-bottom:none;}
+.onb-panel-icon{font-size:22px;margin-bottom:8px;}
+.onb-panel-title{font-family:var(--rc);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:6px;}
+.onb-panel-body{font-size:12px;color:var(--text-mid);line-height:1.65;}
+.onb-panel-body strong{color:var(--navy);}
+.onb-ftr{padding:16px 36px;background:var(--off);border-top:1px solid var(--slate);display:flex;align-items:center;justify-content:space-between;}
+.onb-skip{font-size:12px;color:var(--text-light);cursor:pointer;background:none;border:none;}
+.onb-skip:hover{color:var(--navy);}
+
+/* HELP PANEL */
+.help-fab{position:fixed;bottom:28px;right:28px;z-index:150;width:44px;height:44px;border-radius:50%;background:var(--navy);border:2px solid var(--blue);color:var(--white);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25);transition:all .15s;}
+.help-fab:hover{background:var(--blue);transform:scale(1.08);}
+.help-panel{position:fixed;bottom:82px;right:28px;z-index:150;width:320px;background:var(--white);border:1px solid var(--slate-mid);border-radius:6px;box-shadow:0 8px 32px rgba(13,33,55,.18);overflow:hidden;max-height:70vh;display:flex;flex-direction:column;}
+.help-panel-hdr{background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.help-panel-title{font-family:var(--rc);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--white);}
+.help-panel-x{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;line-height:1;}
+.help-body{overflow-y:auto;flex:1;}
+.help-section{border-bottom:1px solid var(--slate-light);}
+.help-section:last-child{border-bottom:none;}
+.help-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--white);}
+.help-section-hdr:hover{background:var(--off);}
+.help-section-label{font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);}
+.help-section-toggle{font-size:11px;color:var(--text-light);}
+.help-section-body{padding:0 16px 14px;font-size:12px;color:var(--text-mid);line-height:1.7;display:none;}
+.help-section-body.open{display:block;}
+.help-section-body ul{padding-left:16px;margin-top:4px;}
+.help-section-body li{margin-bottom:4px;}
+.help-section-body strong{color:var(--navy);}
+.help-tip{background:var(--off);border-left:3px solid var(--teal);padding:8px 10px;border-radius:0 3px 3px 0;margin-top:8px;font-size:11px;color:var(--text-mid);}
+
+/* CONTEXTUAL HINT */
+.ctx-hint{background:#F0F9F9;border:1px solid rgba(39,137,137,.3);border-radius:3px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--teal);display:flex;align-items:flex-start;gap:8px;}
+.ctx-hint-dismiss{margin-left:auto;background:none;border:none;color:var(--teal);cursor:pointer;font-size:14px;line-height:1;flex-shrink:0;}
+
+/* ATTACHMENT CHIP */
+.attach-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#EEF4F9;border:1px solid #C0D4E8;border-radius:3px;font-size:12px;color:var(--blue);margin-top:10px;}
+.attach-chip-icon{font-size:14px;}
+.attach-chip-name{font-weight:500;}
+.attach-chip-size{font-size:10px;color:var(--text-light);}
+
+.deal-team-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+.deal-team-label{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;font-family:var(--rc);font-weight:700;margin-right:4px;}
+.deal-av{width:28px;height:28px;border-radius:50%;background:var(--blue);border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-family:var(--rc);font-weight:700;font-size:10px;color:var(--white);cursor:default;position:relative;}
+.deal-av:hover .deal-av-tip{display:block;}
+.deal-av-tip{display:none;position:absolute;bottom:34px;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--white);font-size:10px;white-space:nowrap;padding:4px 8px;border-radius:3px;border:1px solid var(--blue);z-index:10;}
+.deal-av-lead{background:var(--teal);}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<header class="hdr">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="hdr-brand">Sands Investment Group</div>
+    <div class="hdr-tool">Client Communications</div>
+  </div>
+  <div class="hdr-user" id="hdr-user">Ethan Offenbecher</div>
+</header>
+
+<div class="team-bar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div id="logged-in-av" style="width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:var(--rc);font-weight:700;font-size:11px;color:var(--white);flex-shrink:0;"></div>
+    <div>
+      <div id="logged-in-name" style="font-size:13px;font-weight:500;color:var(--navy);"></div>
+      <div id="logged-in-role" style="font-size:11px;color:var(--text-light);"></div>
+    </div>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <div style="font-family:var(--rc);font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);">Switch to</div>
+    <div id="team-chips"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="main">
+    <div style="margin-bottom:24px;">
+      <div class="sec-label">Action Required</div>
+      <div class="aq">
+        <div class="aq-hdr">
+          <div class="aq-title">Client Communications Due <span class="aq-badge" id="aq-count">4</span></div>
+        </div>
+        <div id="aq-items"></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('listings')">Active Listings</button>
+      <button class="tab" onclick="switchTab('history')">Communication History</button>
+    </div>
+    <div id="tab-listings">
+      <div class="sec-label">Deal Team · Multi-Tenant</div>
+      <div class="listings-grid" id="listings-grid"></div>
+    </div>
+    <div id="tab-history" style="display:none;">
+      <input class="search-input" id="search-input" placeholder="Search by listing, type, or subject…" oninput="renderHistory()">
+      <div id="history-upcoming"></div>
+      <div id="history-past"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="view" id="view-detail">
+  <div class="detail-view">
+    <button class="back-btn" onclick="goBack()">← All Listings</button>
+    <div class="detail-card">
+      <div class="detail-hdr">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div class="detail-title" id="d-name"></div>
+            <div class="detail-addr" id="d-addr"></div>
+          </div>
+          <div id="d-expiry"></div>
+        </div>
+        <div class="detail-stats" id="d-stats"></div>
+        <div class="deal-team-row" id="d-team"></div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-top-blades" id="top-blades"></div>
+        <div class="detail-bottom">
+          <div class="tl-col" id="tl-container"></div>
+          <div class="ap-col" id="action-btns"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" style="display:none;" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-x" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-ftr" id="modal-ftr"></div>
+  </div>
+</div>
+
+<!-- SEND OVERLAY -->
+<div class="send-overlay" id="send-overlay" style="display:none;">
+  <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
+  <div class="send-card">
+    <div class="send-icon">✓</div>
+    <div class="send-title" id="send-title"></div>
+    <div class="send-sub" id="send-sub"></div>
+    <div class="send-signal">✓ Gmail send confirmed · Logged to timeline</div>
+    <div class="send-gmail-note">In the live environment, this email will send directly from your Gmail inbox and appear in your Sent folder.</div>
+    <button class="btn btn-primary" onclick="closeSendOverlay()">Done</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const TEAM=[
+  {id:'ethan',name:'Ethan Offenbecher',email:'ethan@sandsig.com',initials:'EO',role:'Vice President',dealRole:'Lead Advisor & Negotiations',lead:true},
+  {id:'baker',name:'Baker Baine',email:'baker@sandsig.com',initials:'BB',role:'Investment Sales Advisor',dealRole:'Buyer Outreach & Deal Coordination',lead:false},
+  {id:'z',name:'Z Rizvon',email:'z@sandsig.com',initials:'ZR',role:'Senior Investment Sales Advisor',dealRole:'Inquiry Management & Offer Negotiation',lead:false},
+  {id:'burt',name:'Burt Dement',email:'burt@sandsig.com',initials:'BD',role:'Senior Investment Advisor',dealRole:'Marketing & Data Support',lead:false},
+  {id:'tc',name:'Transaction Coordinator',email:'tc@sandsig.com',initials:'TC',role:'Transaction Coordinator',dealRole:'Escrow & Closing Coordination',lead:false,optional:true},
+];
+
+const COMM_TYPES=[
+  {id:'welcome',label:'Welcome + Meet the Team',icon:'👋',color:'#EEF4F9',series:'onboarding',optional:false},
+  {id:'mktg-process',label:'Marketing Process Overview',icon:'📋',color:'#F0F9F9',series:'onboarding',optional:true},
+  {id:'om-review',label:'OM Review',icon:'📄',color:'#F7F4F0',series:'active',optional:false,repeatable:true},
+  {id:'live-market',label:'Live on Market',icon:'🚀',color:'#EEF7F2',series:'active',optional:false},
+  {id:'bi-weekly',label:'Bi-Weekly Update',icon:'📊',color:'#FDF6E8',series:'active',optional:false,repeatable:true},
+  {id:'extension',label:'Listing Extension',icon:'📅',color:'#FDF1F0',series:'late',optional:false},
+  {id:'wrap-up',label:'Wrap-Up',icon:'✅',color:'#F4F5F6',series:'late',optional:false},
+];
+
+const LISTINGS=[
+  {id:'plaza-west',name:'Plaza West Shopping Center',address:'601 N West St, Wichita, KS 67203',price:'$6,645,000',capRate:'8.18%',dom:28,daysUntilExp:152,client:'Richard Hartwell',clientFirst:'Richard',clientEmail:'richard.hartwell@example.com',nextTouch:'bi-weekly',listingUrl:'https://sandsig.com/listings/plaza-west-shopping-center-asset-wichita-kansas/',crexiUrl:'https://www.crexi.com/properties',goLiveDate:'2026-03-19',dealTeam:['ethan','baker','z'],
+    history:[
+      {type:'welcome',date:'2026-03-01',sentBy:'ethan',subject:'Your New Listing with Sands Investment Group',preview:'Richard, I\'m grateful for the opportunity to represent you and look forward to working together on Plaza West Shopping Center. Our team is already hard at work to position your property for maximum visibility and results...',logged:true},
+      {type:'mktg-process',date:'2026-03-02',sentBy:'baker',subject:'Marketing Process Overview',preview:'Richard, our team is already hard at work. Here\'s a clear look at the process and timing so you know exactly what to expect...',logged:true},
+      {type:'om-review',date:'2026-03-10',sentBy:'baker',subject:'Plaza West Shopping Center — OM Ready for Your Review (Deadline: Mar 12)',preview:'Richard, attached is the first draft of the Offering Memorandum for Plaza West Shopping Center. Please share any feedback by March 12...',logged:true},
+      {type:'live-market',date:'2026-03-19',sentBy:'ethan',subject:'Plaza West is Live on SandsIG.com',preview:'Richard, Plaza West Shopping Center is officially live on the market as of today. You can view your listing here...',logged:true},
+    ],
+    scheduled:[{type:'eblast',date:'2026-04-22',desc:'SIG E-Blast — Shopping Center Buyer Segment',source:'marketing'}]
+  },
+  {id:'crossroads',name:'Crossroads Market Center',address:'4201 E Douglas Ave, Wichita, KS 67218',price:'$4,200,000',capRate:'7.45%',dom:61,daysUntilExp:59,client:'Patricia Wendell',clientFirst:'Patricia',clientEmail:'p.wendell@example.com',nextTouch:'bi-weekly',listingUrl:'https://sandsig.com/listings/',crexiUrl:'https://www.crexi.com/properties',goLiveDate:'2026-02-20',dealTeam:['ethan','baker','z'],
+    history:[
+      {type:'welcome',date:'2026-02-01',sentBy:'ethan',subject:'Your New Listing with Sands Investment Group',preview:'Patricia, I\'m grateful for the opportunity to represent you...',logged:true},
+      {type:'mktg-process',date:'2026-02-02',sentBy:'z',subject:'Marketing Process Overview',preview:'Patricia, our team is already moving on Crossroads Market Center...',logged:true},
+      {type:'om-review',date:'2026-02-12',sentBy:'z',subject:'Crossroads Market Center — OM Ready for Your Review (Deadline: Feb 14)',preview:'Patricia, attached is the first draft of the OM for Crossroads Market Center...',logged:true},
+      {type:'live-market',date:'2026-02-20',sentBy:'ethan',subject:'Crossroads is Live on SandsIG.com',preview:'Patricia, Crossroads Market Center is officially live...',logged:true},
+      {type:'bi-weekly',date:'2026-03-05',sentBy:'baker',subject:'03.05.26 Crossroads Market Center Update',preview:'Patricia, sharing your bi-weekly update on Crossroads Market Center...',logged:true},
+      {type:'bi-weekly',date:'2026-03-19',sentBy:'baker',subject:'03.19.26 Crossroads Market Center Update',preview:'Patricia, here is your latest update...',logged:true},
+    ],
+    scheduled:[{type:'eblast',date:'2026-04-24',desc:'SIG E-Blast — Retail Value-Add Buyers',source:'marketing'}]
+  },
+  {id:'heritage',name:'Heritage Square',address:'1122 S Oliver St, Wichita, KS 67218',price:'$3,100,000',capRate:'6.90%',dom:8,daysUntilExp:172,client:'James & Carol Beaumont',clientFirst:'James',clientEmail:'jbeaumont@example.com',nextTouch:'om-review',goLiveDate:'2026-04-30',listingUrl:'https://sandsig.com/listings/',crexiUrl:'https://www.crexi.com/properties',dealTeam:['ethan','z'],
+    history:[
+      {type:'welcome',date:'2026-04-08',sentBy:'ethan',subject:'Your New Listing with Sands Investment Group',preview:'James, I\'m grateful for the opportunity to represent you and look forward to working together on Heritage Square...',logged:true},
+      {type:'mktg-process',date:'2026-04-09',sentBy:'baker',subject:'Marketing Process Overview',preview:'James, our team is already moving on Heritage Square...',logged:true},
+    ],
+    scheduled:[]
+  },
+  {id:'northpark',name:'Northpark Village',address:'2800 N Rock Rd, Derby, KS 67037',price:'$8,900,000',capRate:'7.20%',dom:94,daysUntilExp:26,client:'Lakeview Capital Partners',clientFirst:'Michael',clientEmail:'m.chen@lakeviewcap.com',nextTouch:'extension',goLiveDate:'2026-01-31',listingUrl:'https://sandsig.com/listings/',crexiUrl:'https://www.crexi.com/properties',dealTeam:['ethan','baker','burt'],
+    history:[
+      {type:'welcome',date:'2026-01-10',sentBy:'ethan',subject:'Your New Listing with Sands Investment Group',preview:'Michael, I\'m grateful for the opportunity to represent Northpark Village...',logged:true},
+      {type:'mktg-process',date:'2026-01-11',sentBy:'baker',subject:'Marketing Process Overview',preview:'Michael, our team is already moving...',logged:true},
+      {type:'om-review',date:'2026-01-22',sentBy:'baker',subject:'Northpark Village — OM Ready for Your Review (Deadline: Jan 24)',preview:'Michael, attached is the first draft of the OM for Northpark Village...',logged:true},
+      {type:'live-market',date:'2026-01-31',sentBy:'ethan',subject:'Northpark Village is Live on SandsIG.com',preview:'Michael, Northpark Village is officially live...',logged:true},
+      {type:'bi-weekly',date:'2026-02-14',sentBy:'z',subject:'02.14.26 Northpark Village Update',preview:'Michael, here is your bi-weekly update...',logged:true},
+      {type:'bi-weekly',date:'2026-02-28',sentBy:'baker',subject:'02.28.26 Northpark Village Update',preview:'Michael, here is your latest update...',logged:true},
+      {type:'bi-weekly',date:'2026-03-14',sentBy:'baker',subject:'03.14.26 Northpark Village Update',preview:'Michael, here is your March 14 update...',logged:true},
+      {type:'bi-weekly',date:'2026-03-28',sentBy:'ethan',subject:'03.28.26 Northpark Village Update',preview:'Michael, here is your March 28 update on Northpark Village...',logged:true},
+    ],
+    scheduled:[{type:'eblast',date:'2026-04-21',desc:'SIG E-Blast — Community Center Buyers',source:'marketing'}]
+  }
+];
+
+const AQ_ITEMS=[
+  {listingId:'northpark',listing:'Northpark Village',commType:'extension',typeLabel:'Listing Extension Request',urgency:'red',tagClass:'pill-red',tagLabel:'26 days to expiry'},
+  {listingId:'crossroads',listing:'Crossroads Market Center',commType:'bi-weekly',typeLabel:'Bi-Weekly Update Overdue',urgency:'red',tagClass:'pill-red',tagLabel:'15 days overdue'},
+  {listingId:'plaza-west',listing:'Plaza West Shopping Center',commType:'bi-weekly',typeLabel:'Bi-Weekly Update Due',urgency:'amber',tagClass:'pill-amber',tagLabel:'Due today'},
+  {listingId:'heritage',listing:'Heritage Square',commType:'om-review',typeLabel:'OM Review',urgency:'blue',tagClass:'pill-blue',tagLabel:'Next step'},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let S={
+  activeMember:'ethan',selectedListing:null,activeTab:'listings',
+  modal:null,generating:false,generated:false,generatedContent:null,
+  tlCollapsed:{},
+  history:LISTINGS.map(l=>({id:l.id,history:[...l.history],scheduled:[...l.scheduled]})),
+  // Broker preferences (simulates persistent storage)
+  prefs:{
+    ethan:{opening:'Hi [name],',closing:'More soon,',style:'Direct and confident. Lead with the news.'},
+    baker:{opening:'Hi [name],',closing:'Best Regards,',style:'Warm and professional.'},
+    z:{opening:'Hi [name],',closing:'Best,',style:'Concise.'},
+    burt:{opening:'Hi [name],',closing:'Thanks,',style:'Straightforward.'},
+  },
+  // Team selection per compose
+  selectedTeamMembers:new Set(['ethan','baker','z','burt']),
+  bwIncludeLeads:true,bwIncludeLOIs:true,bwClosingMode:'generate',bwCustomClosing:'',
+  customMetricLabel:'',customMetricValue:'',
+  attachedFile:null,
+  emailTo:'',emailFrom:'',emailCC:'',emailSubject:'',
+};
+
+function fmt(dt){return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function addDays(date,days){const d=new Date(date);d.setDate(d.getDate()+days);return d;}
+function fmtShort(dt){return new Date(dt).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function getListing(id){return LISTINGS.find(l=>l.id===id);}
+function getMember(id){return TEAM.find(m=>m.id===id);}
+function getLead(){return TEAM.find(m=>m.lead);}
+function getHistEntry(id){return S.history.find(h=>h.id===id);}
+function getCT(id){return COMM_TYPES.find(c=>c.id===id);}
+
+// Communication timeline plan from go-live date
+function getCommPlan(listing){
+  const gl=listing.goLiveDate?new Date(listing.goLiveDate):new Date();
+  const signDate=addDays(gl,-21);
+  return [
+    {label:'Welcome + Meet the Team',date:fmtShort(signDate),offset:0},
+    {label:'Marketing Process Overview',date:fmtShort(addDays(signDate,1)),offset:1},
+    {label:'OM Review (Round 1)',date:fmtShort(addDays(signDate,10)),offset:10},
+    {label:'Live on Market',date:fmtShort(gl),offset:21},
+    {label:'Bi-Weekly Update #1',date:fmtShort(addDays(gl,14)),offset:35},
+    {label:'Bi-Weekly Update #2',date:fmtShort(addDays(gl,28)),offset:49},
+  ];
+}
+
+function init(){renderTeam();renderAQ();renderListings();}
+
+function renderTeam(){
+  const member=getMember(S.activeMember);
+  // Update logged-in display
+  const avEl=document.getElementById('logged-in-av');
+  const nameEl=document.getElementById('logged-in-name');
+  const roleEl=document.getElementById('logged-in-role');
+  if(avEl)avEl.textContent=member.initials;
+  if(nameEl)nameEl.textContent=member.name;
+  if(roleEl)roleEl.textContent=member.role;
+  document.getElementById('hdr-user').textContent=member.name;
+  // "Switch to" chips — show other team members (filtered to current listing's deal team if in detail view)
+  const el=document.getElementById('team-chips');el.innerHTML='';
+  const dealTeam=S.selectedListing?getListing(S.selectedListing)?.dealTeam:null;
+  const showMembers=TEAM.filter(m=>m.id!==S.activeMember&&(!dealTeam||dealTeam.includes(m.id)));
+  showMembers.forEach(m=>{
+    const c=document.createElement('div');
+    c.className='team-chip';
+    if(m.optional)c.style.borderStyle='dashed';
+    c.innerHTML=`<div class="team-chip-av">${m.initials}</div>${m.name.split(' ')[0]}<span class="team-chip-role">${m.role}</span>`;
+    c.onclick=()=>{S.activeMember=m.id;renderTeam();};
+    el.appendChild(c);
+  });
+}
+
+function renderAQ(){
+  const el=document.getElementById('aq-items');el.innerHTML='';
+  AQ_ITEMS.forEach((item,i)=>{
+    const d=document.createElement('div');d.className='aq-item';
+    d.innerHTML=`
+      <div class="aq-dot" style="background:${item.urgency==='red'?'var(--red)':item.urgency==='amber'?'var(--amber)':'var(--blue)'}"></div>
+      <div class="aq-content">
+        <div class="aq-listing">${item.listing}</div>
+        <div class="aq-sub">${item.typeLabel} <span class="pill ${item.tagClass}" style="margin-left:6px;">${item.tagLabel}</span></div>
+      </div>
+      <button class="aq-btn" onclick="openFromAQ(${i})">Act Now →</button>
+    `;
+    el.appendChild(d);
+  });
+  document.getElementById('aq-count').textContent=AQ_ITEMS.length;
+}
+
+function openFromAQ(i){const item=AQ_ITEMS[i];showDetail(item.listingId);setTimeout(()=>openCompose(item.listingId,item.commType),150);}
+
+function switchTab(tab){
+  S.activeTab=tab;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='listings')||(i===1&&tab==='history')));
+  document.getElementById('tab-listings').style.display=tab==='listings'?'block':'none';
+  document.getElementById('tab-history').style.display=tab==='history'?'block':'none';
+  if(tab==='history')renderHistory();
+}
+
+function renderListings(){
+  const el=document.getElementById('listings-grid');el.innerHTML='';
+  LISTINGS.forEach(l=>{
+    const c=document.createElement('div');c.className='lcard';
+    const expColor=l.daysUntilExp<30?'var(--red)':l.daysUntilExp<60?'var(--amber)':'var(--green)';
+    const nt=getCT(l.nextTouch);
+    const ntColor=l.nextTouch==='extension'?'var(--red)':l.nextTouch==='bi-weekly'||l.nextTouch==='om-review'?'var(--amber)':'var(--blue)';
+    const ntBg=l.nextTouch==='extension'?'var(--red-bg)':l.nextTouch==='bi-weekly'||l.nextTouch==='om-review'?'var(--amber-bg)':'#EEF4F9';
+    const ntBorder=l.nextTouch==='extension'?'#E8C0BB':l.nextTouch==='bi-weekly'||l.nextTouch==='om-review'?'#E8D0A0':'#C0D4E8';
+    c.innerHTML=`
+      <div class="lcard-top">
+        <div class="lcard-name">${l.name}</div>
+        <div class="lcard-addr">${l.address}</div>
+        <div class="lcard-stats">
+          <div><div class="lcard-stat-val">${l.price}</div><div class="lcard-stat-lbl">List Price</div></div>
+          <div><div class="lcard-stat-val">${l.capRate}</div><div class="lcard-stat-lbl">Cap Rate</div></div>
+          <div><div class="lcard-stat-val">${l.dom}</div><div class="lcard-stat-lbl">Days on Mkt</div></div>
+          <div><div class="lcard-stat-val" style="color:${expColor}">${l.daysUntilExp}</div><div class="lcard-stat-lbl">Days to Exp</div></div>
+        </div>
+      </div>
+      <div class="lcard-bottom">
+        <span class="lcard-next" style="color:${ntColor};background:${ntBg};border:1px solid ${ntBorder};">${nt?nt.label:'Up to date'}</span>
+        <span style="font-size:11px;color:var(--text-light);">${l.dom} days active</span>
+      </div>
+    `;
+    c.onclick=()=>showDetail(l.id);
+    el.appendChild(c);
+  });
+}
+
+function showDetail(id){
+  S.selectedListing=id;
+  document.getElementById('view-dashboard').classList.remove('active');
+  document.getElementById('view-detail').classList.add('active');
+  renderDetail();window.scrollTo(0,0);
+}
+
+function goBack(){
+  document.getElementById('view-detail').classList.remove('active');
+  document.getElementById('view-dashboard').classList.add('active');
+  S.selectedListing=null;
+  renderTeam(); // reset switch-to chips to full team
+}
+
+function renderDetail(){
+  const l=getListing(S.selectedListing);if(!l)return;
+  document.getElementById('d-name').textContent=l.name;
+  document.getElementById('d-addr').textContent=l.address;
+  const expClass=l.daysUntilExp<30?'pill-red':l.daysUntilExp<60?'pill-amber':'pill-green';
+  document.getElementById('d-expiry').innerHTML=`<span class="pill ${expClass}">${l.daysUntilExp} days to expiry</span>`;
+  document.getElementById('d-stats').innerHTML=`
+    <div><div class="detail-stat-val">${l.price}</div><div class="detail-stat-lbl">List Price</div></div>
+    <div><div class="detail-stat-val">${l.capRate}</div><div class="detail-stat-lbl">Cap Rate</div></div>
+    <div><div class="detail-stat-val">${l.dom}</div><div class="detail-stat-lbl">Days on Market</div></div>
+    <div><div class="detail-stat-val">${l.client}</div><div class="detail-stat-lbl">Client</div></div>
+  `;
+  // Deal team avatars
+  const teamEl=document.getElementById('d-team');
+  if(teamEl){
+    const dt=l.dealTeam||['ethan'];
+    teamEl.innerHTML='<div class="deal-team-label">Deal Team</div>'+
+      dt.map(id=>{
+        const m=getMember(id);if(!m)return'';
+        const isLead=m.lead;
+        return `<div class="deal-av${isLead?' deal-av-lead':''}" title="${m.name} · ${m.role}">${m.initials}<div class="deal-av-tip">${m.name}<br>${m.role}</div></div>`;
+      }).join('');
+  }
+  renderTeam(); // refresh switch-to chips for this listing's team
+  renderTimeline(l);
+  renderActionPanel(l);
+}
+
+function renderTimeline(l){
+  const el=document.getElementById('tl-container');el.innerHTML='';
+  const hist=getHistEntry(l.id);
+  const past=[...(hist?hist.history:l.history)].reverse();
+  const scheduled=hist?hist.scheduled:l.scheduled;
+  // Scheduled FIRST
+  if(scheduled.length){
+    const sec=makeTlSection('Scheduled',scheduled.map(s=>makeTlItem({dotClass:'tl-dot-scheduled',typeLabel:'E-Blast',desc:s.desc,meta:fmt(s.date),tag:'<span style="font-size:10px;color:var(--blue);">SIG Marketing</span>'})),'scheduled');
+    el.appendChild(sec);
+  }
+  // Then history
+  if(past.length){
+    const sec=makeTlSection('Communication History',past.map(item=>{
+      const m=getMember(item.sentBy);
+      return makeTlItem({dotClass:'tl-dot-sent',typeLabel:getCT(item.type)?.label||item.type,desc:item.subject,meta:fmt(item.date),by:m?m.name.split(' ')[0]:item.sentBy,preview:item.preview,previewClick:`previewEmail('${l.id}','${item.date}')`});
+    }),'past');
+    el.appendChild(sec);
+  }
+}
+
+function makeTlSection(title,items,key){
+  const collapsed=S.tlCollapsed[key];
+  const sec=document.createElement('div');sec.className='tl-section';
+  const hdr=document.createElement('div');hdr.className='tl-section-hdr';
+  hdr.innerHTML=`<div class="tl-section-title">${title}</div><div class="tl-section-toggle">${collapsed?'▶':'▼'}</div>`;
+  hdr.onclick=()=>{S.tlCollapsed[key]=!S.tlCollapsed[key];renderDetail();};
+  sec.appendChild(hdr);
+  if(!collapsed){const body=document.createElement('div');body.className='tl-section-body';items.forEach(i=>body.appendChild(i));sec.appendChild(body);}
+  return sec;
+}
+
+function makeTlItem({dotClass,typeLabel,desc,meta,by,tag,preview,previewClick}){
+  const d=document.createElement('div');d.className='tl-item';
+  d.innerHTML=`
+    <div class="tl-dot ${dotClass}">${dotClass==='tl-dot-sent'?`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2L7.5 2" stroke="#1A7A4A" stroke-width="1.5" stroke-linecap="round"/></svg>`:dotClass==='tl-dot-scheduled'?'<span style="font-size:9px;">📅</span>':'<span style="font-size:9px;color:var(--amber);">○</span>'}</div>
+    <div class="tl-content">
+      <div class="tl-type">${typeLabel}</div>
+      <div class="tl-desc">${desc}</div>
+      <div class="tl-meta"><span>${meta}</span>${by?`<span>·</span><span class="tl-by">Sent by ${by}</span>`:''}${tag||''}</div>
+      ${preview?`<div class="tl-preview" onclick="${previewClick}">${preview.slice(0,110)}… <span style="color:var(--blue);font-size:10px;">View</span></div>`:''}
+    </div>
+  `;
+  return d;
+}
+
+function renderActionPanel(l){
+  // TOP BLADES: Action Needed + Scheduled (full width above timeline)
+  const topEl=document.getElementById('top-blades');
+  if(topEl){
+    topEl.innerHTML='';
+    if(l.nextTouch){
+      const ct=getCT(l.nextTouch);
+      if(ct){
+        const box=document.createElement('div');
+        box.className='action-needed-box';
+        box.style.cssText='flex:1;min-width:240px;margin:0;';
+        box.innerHTML=`<div class="action-needed-hdr"><span>⚠</span> Action Needed</div>`;
+        const b=document.createElement('button');b.className='action-needed-btn';
+        b.innerHTML=`<div style="width:24px;height:24px;border-radius:3px;background:${ct.color};display:flex;align-items:center;justify-content:center;font-size:11px;">${ct.icon}</div><div class="action-needed-btn-name">${ct.label}</div><span style="font-size:10px;color:var(--red);">→</span>`;
+        b.onclick=()=>openCompose(l.id,ct.id);box.appendChild(b);topEl.appendChild(box);
+      }
+    }
+    const sched=(getHistEntry(l.id)||{scheduled:l.scheduled}).scheduled;
+    if(sched&&sched.length){
+      const box=document.createElement('div');
+      box.className='scheduled-box';
+      box.style.cssText='flex:1;min-width:240px;margin:0;';
+      box.innerHTML=`<div class="scheduled-hdr">Scheduled by Marketing</div>`;
+      sched.forEach(s=>{const d=document.createElement('div');d.className='scheduled-item';d.innerHTML=`<span>📧</span>${s.desc} — ${fmt(s.date)}`;box.appendChild(d);});
+      topEl.appendChild(box);
+    }
+  }
+
+  // RIGHT COLUMN: comm type buttons only
+  const el=document.getElementById('action-btns');el.innerHTML='';
+  // Timeline plan at top of right column
+  const plan=getCommPlan(l);
+  const planBox=document.createElement('div');planBox.className='timeline-plan';planBox.style.marginBottom='10px';
+  planBox.innerHTML=`<div class="timeline-plan-hdr">📅 Estimated Timeline</div>`+
+    plan.map(p=>`<div class="timeline-plan-item"><div class="timeline-plan-date">${p.date}</div><div class="timeline-plan-label">${p.label}</div></div>`).join('');
+  el.appendChild(planBox);
+
+  const label=document.createElement('div');label.className='ap-section-label';label.style.marginTop='4px';label.textContent='Send Communication';el.appendChild(label);
+  COMM_TYPES.forEach(ct=>{
+    const btn=document.createElement('button');btn.className='comm-btn';
+    btn.innerHTML=`<div class="comm-btn-icon" style="background:${ct.color}">${ct.icon}</div><div class="comm-btn-name">${ct.label}</div>${ct.optional?'<span class="optional-tag">Optional</span>':''}${ct.repeatable?'<span class="optional-tag">↻</span>':''}`;
+    btn.onclick=()=>openCompose(l.id,ct.id);el.appendChild(btn);
+  });
+}
+
+function renderHistory(){
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase();
+  const all=[];
+  S.history.forEach(h=>{
+    const l=getListing(h.id);
+    h.history.forEach(item=>all.push({...item,listingName:l.name,listingId:h.id,_upcoming:false}));
+    h.scheduled.forEach(item=>all.push({...item,listingName:l.name,listingId:h.id,_upcoming:true,type:'eblast'}));
+  });
+  const filtered=q?all.filter(i=>(i.listingName+' '+(i.subject||i.desc||'')+' '+(getCT(i.type)?.label||i.type)).toLowerCase().includes(q)):all;
+  const upcoming=filtered.filter(i=>i._upcoming).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const past=filtered.filter(i=>!i._upcoming).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const upEl=document.getElementById('history-upcoming');upEl.innerHTML='';
+  if(upcoming.length){
+    upEl.innerHTML='<div class="hist-section-label">Upcoming & Scheduled</div>';
+    upcoming.forEach(item=>{
+      const d=document.createElement('div');d.className='hist-item scheduled';
+      d.innerHTML=`<div class="hist-dot" style="background:var(--blue);"></div><div class="hist-main"><div class="hist-type">Scheduled E-Blast · ${item.listingName}</div><div class="hist-subject">${item.desc}</div><div class="hist-meta">${fmt(item.date)} · SIG Marketing</div></div><span class="pill pill-blue">Scheduled</span>`;
+      upEl.appendChild(d);
+    });
+  }
+  const pastEl=document.getElementById('history-past');pastEl.innerHTML='<div class="hist-section-label">Sent</div>';
+  if(!past.length){pastEl.innerHTML+='<div style="padding:20px;font-size:13px;color:var(--text-light);">No communications found.</div>';return;}
+  past.forEach(item=>{
+    const m=getMember(item.sentBy);
+    const d=document.createElement('div');d.className='hist-item';
+    d.innerHTML=`<div class="hist-dot" style="background:var(--green);"></div><div class="hist-main"><div class="hist-type">${getCT(item.type)?.label||item.type} · ${item.listingName}</div><div class="hist-subject">${item.subject}</div><div class="hist-meta">${fmt(item.date)}${m?' · Sent by '+m.name:''}</div></div><button class="btn btn-ghost btn-sm" onclick="previewEmail('${item.listingId}','${item.date}')">View</button>`;
+    pastEl.appendChild(d);
+  });
+}
+
+// ── COMPOSE ───────────────────────────────────────────────────────────────────
+function openCompose(listingId,typeId){
+  const l=getListing(listingId);const ct=getCT(typeId);
+  S.modal={listingId,typeId,listing:l,type:ct};
+  S.generating=false;S.generated=false;S.generatedContent=null;
+  S.attachedFile=null;
+  // Pre-select deal team for this listing
+  const listingDealTeam=(l.dealTeam||['ethan','baker','z','burt']);
+  S.selectedTeamMembers=new Set(listingDealTeam);
+  S.bwIncludeLeads=true;S.bwIncludeLOIs=true;S.bwClosingMode='generate';S.bwCustomClosing='';
+  S.customMetricLabel='';S.customMetricValue='';
+  const member=getMember(S.activeMember);const lead=getLead();
+  const sendAs=member.lead?member:lead;
+  S.emailTo=l.clientEmail||'';
+  S.emailFrom=sendAs.email;
+  const dealTeamIds=(l.dealTeam||TEAM.map(m=>m.id));
+  S.emailCC=TEAM.filter(m=>dealTeamIds.includes(m.id)&&m.id!==sendAs.id).map(m=>m.email).join(', ');
+  S.emailSubject='';
+  document.getElementById('modal-title').textContent=ct.label;
+  renderModalBody();
+  document.getElementById('modal').style.display='flex';
+}
+
+function renderModalBody(){
+  const {listing:l,type:ct}=S.modal;
+  const member=getMember(S.activeMember);const lead=getLead();
+  const isJunior=!member.lead;const sendAs=isJunior?lead:member;
+  const prefs=S.prefs[S.activeMember]||{};
+  const body=document.getElementById('modal-body');const ftr=document.getElementById('modal-ftr');
+
+  if(S.generating){
+    body.innerHTML=`<div class="generating"><div class="load-bar"></div><div class="gen-txt">Drafting ${ct.label.toLowerCase()}…</div></div>`;
+    ftr.innerHTML='';return;
+  }
+
+  if(S.generated&&S.generatedContent){
+    // Auto-set subject if empty
+    if(!S.emailSubject)S.emailSubject=S.generatedContent.subject;
+    body.innerHTML=`
+      ${isJunior?`<div class="on-behalf">✓ Drafting on behalf of ${lead.name} · Will send from ${lead.name}</div>`:''}
+      
+      <div class="f-sec-title" style="margin-top:0;">Email Details</div>
+      <div class="email-header-box">
+        <div class="email-hdr-row"><div class="email-hdr-label">To</div><input class="email-hdr-val" id="eh-to" value="${S.emailTo}"></div>
+        <div class="email-hdr-row"><div class="email-hdr-label">From</div><input class="email-hdr-val" id="eh-from" value="${S.emailFrom}"></div>
+        <div class="email-hdr-row"><div class="email-hdr-label">CC</div><input class="email-hdr-val" id="eh-cc" value="${S.emailCC}"></div>
+        <div class="email-hdr-row"><div class="email-hdr-label">Subject</div><input class="email-hdr-val" id="eh-subject" value="${S.emailSubject||S.generatedContent.subject}"></div>
+      </div>
+      ${(ct.id==='extension'||ct.id==='om-review')?`
+        <div class="f-sec-title">Attachment</div>
+        <div class="attach-row" id="attach-row" onclick="simulateAttach()">
+          <span style="font-size:18px;">📎</span>
+          <div class="attach-label" id="attach-label">${S.attachedFile||`Attach ${ct.id==='extension'?'listing extension amendment':'OM draft (PDF)'}`}</div>
+          <span class="attach-tag" id="attach-tag">${S.attachedFile?'✓ Attached':'Browse files'}</span>
+        </div>
+        ${ct.id==='om-review'?`<label class="f-label">Or paste a document link</label><input type="url" class="f-input" id="om-link" placeholder="https://drive.google.com/…">`:'' }
+      `:''}
+      ${showHint('review-first','Review carefully before sending. Check the <strong>To / From / CC</strong> fields above — emails send directly from your Gmail account and will appear in your Sent folder.')}
+      <div class="f-sec-title">Review & Edit</div>
+      <div class="rte-toolbar" id="rte-toolbar">
+        <button class="rte-btn" onclick="rteExec('bold')" title="Bold"><strong>B</strong></button>
+        <button class="rte-btn" onclick="rteExec('italic')" title="Italic"><em>I</em></button>
+        <button class="rte-btn" onclick="rteExec('underline')" title="Underline"><u>U</u></button>
+        <div class="rte-sep"></div>
+        <button class="rte-btn" onclick="rteExec('insertUnorderedList')" title="Bullet list">≡</button>
+        <button class="rte-btn" onclick="rteExec('insertOrderedList')" title="Numbered list">1.</button>
+        <div class="rte-sep"></div>
+        <button class="rte-btn" onclick="rteLink()" title="Insert link">🔗</button>
+        <div class="rte-sep"></div>
+        <button class="rte-btn" onclick="rteExec('removeFormat')" title="Clear formatting">✕</button>
+      </div>
+      <div class="gen-email-editable">
+        <div class="gen-body" contenteditable="true" id="editable-body" style="min-height:200px;outline:none;">${S.generatedContent.body.replace(/\n/g,'<br>')}</div>
+      </div>
+      ${S.modal?.type?.id==='bi-weekly'?`
+        <div style="margin-top:12px;">
+          <div style="font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:6px;">PDF Report Attachment</div>
+          <div class="attach-chip"><span class="attach-chip-icon">📎</span><span class="attach-chip-name">Marketing Update — ${l.name.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,28)}.pdf</span><span class="attach-chip-size">PDF · Auto-generated</span></div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+            <button onclick="previewBwPDF()" style="font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border-radius:3px;border:1px solid var(--slate-mid);background:var(--white);color:var(--navy);cursor:pointer;">Preview PDF</button>
+            <span style="font-size:11px;color:var(--text-light);">Review before sending — remove any data you don't want shared.</span>
+          </div>
+        </div>
+      `:''}
+      <div style="margin-top:6px;font-size:11px;color:var(--text-light);font-style:italic;">Click the email body to edit before sending.</div>
+    `;
+    if(S.attachedFile){const row=document.getElementById('attach-row');if(row){row.style.borderColor='var(--green)';row.style.background='var(--green-bg)';}}
+    ftr.innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-ghost" onclick="regenerate()">Regenerate</button><button class="btn btn-green" onclick="simulateSend()">Send via Gmail →</button>`;
+    return;
+  }
+
+  // ── BI-WEEKLY: full dynamic UI ────────────────────────────────────────────
+  if(ct.id==='bi-weekly'){
+    const expColor=l.daysUntilExp<30?'warn-red':l.daysUntilExp<60?'warn-amber':'';
+    body.innerHTML=`
+      ${isJunior?`<div class="on-behalf">✓ Sending on behalf of ${lead.name} (${lead.role})</div>`:''}
+      <div class="f-sec-title" style="margin-top:0;">Property Snapshot</div>
+      <div class="bw-snapshot">
+        <div class="bw-stat"><div class="bw-stat-val">${l.price}</div><div class="bw-stat-lbl">List Price</div></div>
+        <div class="bw-stat"><div class="bw-stat-val">${l.dom}</div><div class="bw-stat-lbl">Days on Market</div></div>
+        <div class="bw-stat"><div class="bw-stat-val ${expColor}">${l.daysUntilExp}</div><div class="bw-stat-lbl">Days to Expiry</div></div>
+      </div>
+      <div class="bw-platform">
+        <div class="bw-platform-title">SIG Platform — Last 30 Days</div>
+        <div class="bw-platform-grid">
+          <div class="bw-platform-stat"><div class="bw-platform-val">47</div><div class="bw-platform-lbl">Deals Closed</div></div>
+          <div class="bw-platform-stat"><div class="bw-platform-val">284K</div><div class="bw-platform-lbl">Page Views</div></div>
+          <div class="bw-platform-stat"><div class="bw-platform-val">891</div><div class="bw-platform-lbl">E-Blasts Sent</div></div>
+          <div class="bw-platform-stat"><div class="bw-platform-val">28</div><div class="bw-platform-lbl">Avg Leads/Day</div></div>
+        </div>
+      </div>
+      <div class="f-sec-title">Include in Update</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bw-leads" ${S.bwIncludeLeads?'checked':''}> Leads / Inquiries</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="bw-lois" ${S.bwIncludeLOIs?'checked':''}> Active LOIs</label>
+      </div>
+      <div class="f-grid" style="margin-bottom:12px;">
+        <div><label class="f-label">New Inquiries (14 days)</label><input type="number" class="f-input" id="ctx-leads" value="12"></div>
+        <div><label class="f-label">Active LOIs</label><input type="number" class="f-input" id="ctx-lois" value="1"></div>
+      </div>
+      <div class="f-sec-title">Custom Metric <span style="font-weight:300;text-transform:none;letter-spacing:0;color:var(--text-light);font-size:10px;">Optional</span></div>
+      <div class="f-grid" style="margin-bottom:12px;">
+        <div><input type="text" class="f-input" id="ctx-metric-label" placeholder="Metric name (e.g. Calls Made)"></div>
+        <div><input type="text" class="f-input" id="ctx-metric-val" placeholder="Value (e.g. 24 outreach calls)"></div>
+      </div>
+      <div class="f-sec-title">Your Notes</div>
+      <label class="f-label">Broker Notes <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="Your read on market conditions, buyer sentiment, momentum…"></textarea>
+      <label class="f-label">Key Buyer Feedback <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-feedback" placeholder="Summarized feedback from tours, calls, or LOI discussions…" style="min-height:60px;"></textarea>
+      <label class="f-label">Next Steps <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-nextsteps" placeholder="Specific, time-bound actions you're taking…" style="min-height:60px;"></textarea>
+      <div class="f-sec-title">Email Closing</div>
+      <div class="toggle-row">
+        <button class="toggle-btn ${S.bwClosingMode==='generate'?'on':''}" onclick="setBwClosing('generate')">Generate for me</button>
+        <button class="toggle-btn ${S.bwClosingMode==='custom'?'on':''}" onclick="setBwClosing('custom')">Write my own</button>
+      </div>
+      <div id="bw-closing-custom" style="display:${S.bwClosingMode==='custom'?'block':'none'};">
+        <textarea class="f-input" id="ctx-custom-closing" placeholder="Write your closing line here…" style="min-height:60px;">${S.bwCustomClosing}</textarea>
+      </div>
+    `;
+    ftr.innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="generateComm()">Generate Draft →</button>`;
+    return;
+  }
+
+  // ── WELCOME ───────────────────────────────────────────────────────────────
+  if(ct.id==='welcome'){
+    // Show deal team members for this listing
+  const currentDealTeam=(l.dealTeam||TEAM.map(m=>m.id));
+  const dealTeamMembers=TEAM.filter(m=>currentDealTeam.includes(m.id));
+  const teamCheckboxes=dealTeamMembers.map(m=>`
+      <div class="team-checkbox" onclick="toggleTeamMember('${m.id}')">
+        <input type="checkbox" id="tm-${m.id}" ${S.selectedTeamMembers.has(m.id)?'checked':''} onclick="event.stopPropagation();toggleTeamMember('${m.id}')">
+        <div style="flex:1;">
+          <div class="team-checkbox-name">${m.name}</div>
+          <input type="text" class="team-role-input" id="tr-${m.id}" value="${m.dealRole}" placeholder="Role on this deal" onclick="event.stopPropagation();" style="font-size:11px;color:var(--text-light);background:transparent;border:none;border-bottom:1px dashed var(--slate-mid);outline:none;width:100%;margin-top:2px;padding:1px 0;cursor:text;" onfocus="this.style.borderBottomColor='var(--blue)'" onblur="this.style.borderBottomColor='var(--slate-mid)'">
+        </div>
+      </div>
+    `).join('');
+    body.innerHTML=`
+      ${isJunior?`<div class="on-behalf">✓ Sending on behalf of ${lead.name} (${lead.role})</div>`:''}
+      <div class="f-sec-title" style="margin-top:0;">Listing & Client</div>
+      <div class="f-grid">
+        <div><label class="f-label">Listing</label><div class="f-readonly">${l.name}</div></div>
+        <div><label class="f-label">Client</label><div class="f-readonly">${l.client}</div></div>
+        <div><label class="f-label">From</label><div class="f-readonly">${sendAs.name}</div></div>
+        <div><label class="f-label">Listing Agreement Date</label><input type="date" class="f-input" id="ctx-date" value="${new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div class="f-sec-title">Team on This Deal</div>
+      <div style="margin-bottom:8px;font-size:12px;color:var(--text-light);">Check or uncheck team members to include in the introduction.</div>
+      ${teamCheckboxes}
+      <div style="margin-top:8px;">
+        <label class="f-label">Add someone else</label>
+        <input type="text" class="f-input" id="ctx-extra-member" placeholder="Name — Role on deal">
+      </div>
+      <div class="f-sec-title">Personal Note <span style="font-weight:300;text-transform:none;letter-spacing:0;color:var(--text-light);font-size:10px;">Optional</span></div>
+      <textarea class="f-input" id="ctx-notes" placeholder="Connection points, personal context, or specific commitments to include…"></textarea>
+    `;
+    ftr.innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="generateComm()">Generate Draft →</button>`;
+    return;
+  }
+
+  // ── OTHER TYPES ────────────────────────────────────────────────────────────
+  let fields='';
+  if(ct.id==='mktg-process'){
+    fields=`
+      <div style="background:var(--off);border:1px solid var(--slate);border-radius:3px;padding:14px;margin-bottom:14px;font-size:12px;color:var(--text-mid);line-height:1.7;">
+        <div style="font-family:var(--rc);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:8px;">Process Overview You Are Sending</div>
+        <strong>First 36 Business Hours</strong><br>Listing added to Early Access on SandsIG.com · Photography scheduled · OM form submitted<br><br>
+        <strong>Week 1</strong><br>Photography · OM creation · Initial creative review<br><br>
+        <strong>Week 2</strong><br>OM finalized and sent for your review · Property moves to Active on SandsIG.com<br><br>
+        <strong>Week 3</strong><br>Live on CoStar, LoopNet, Crexi · Targeted e-blast to qualified buyers · Paid digital marketing activated
+      </div>
+      <label class="f-label">Timeline adjustments <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="e.g. Photos already done, off-market, expedited timeline…" style="min-height:60px;"></textarea>`;
+  } else if(ct.id==='om-review'){
+    fields=`
+      <div class="f-sec-title">Attachment — Upload First</div>
+      <div style="margin-bottom:8px;font-size:12px;color:var(--text-light);">Upload the OM draft before generating so the email can reference it accurately.</div>
+      <div class="attach-row" id="attach-row-pre" onclick="simulateAttachPre()">
+        <span style="font-size:18px;">📎</span>
+        <div class="attach-label" id="attach-label-pre">${S.attachedFile||'Attach OM draft (PDF)'}</div>
+        <span class="attach-tag" id="attach-tag-pre">${S.attachedFile?'✓ Attached':'Browse files'}</span>
+      </div>
+      <label class="f-label">Or paste a document link</label>
+      <input type="url" class="f-input" id="ctx-omlink" placeholder="https://drive.google.com/…">
+      <div class="f-sec-title">Review Details</div>
+      <div class="f-grid">
+        <div><label class="f-label">Round #</label><input type="number" class="f-input" id="ctx-round" value="1" min="1"></div>
+        <div><label class="f-label">Deadline for Client Review</label><input type="date" class="f-input" id="ctx-deadline" value="${new Date(Date.now()+172800000).toISOString().slice(0,10)}"></div>
+      </div>
+      <label class="f-label">Notes for client <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="What changed from last round, sections to focus on…" style="min-height:60px;"></textarea>
+    `;
+  } else if(ct.id==='live-market'){
+    fields=`
+      <label class="f-label">SandsIG.com Listing URL</label>
+      <input type="url" class="f-input" id="ctx-sigurl" value="${l.listingUrl||''}">
+      <label class="f-label">Crexi Listing URL</label>
+      <input type="url" class="f-input" id="ctx-crexiurl" value="${l.crexiUrl||''}">
+      <label class="f-label">Early notes <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="Early interest or buyer types already contacted…" style="min-height:60px;"></textarea>
+    `;
+  } else if(ct.id==='extension'){
+    fields=`
+      <div class="f-sec-title">Amendment — Upload Before Generating</div>
+      <div style="background:var(--off);border:1px solid var(--slate);border-radius:3px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:var(--text-mid);">
+        Upload the amendment PDF <em>or</em> paste a DocuSign link below before generating.
+      </div>
+      <div class="attach-row" id="attach-row-pre" onclick="simulateAttachPre()">
+        <span style="font-size:18px;">📎</span>
+        <div class="attach-label" id="attach-label-pre">${S.attachedFile||'Upload amendment PDF'}</div>
+        <span class="attach-tag" id="attach-tag-pre">${S.attachedFile?'✓ Attached':'Browse files'}</span>
+      </div>
+      <label class="f-label">Or paste a DocuSign link</label>
+      <input type="url" class="f-input" id="ctx-docusign" placeholder="https://docusign.net/…" style="margin-bottom:4px;">
+      <div class="f-sec-title">Extension Details</div>
+      <div class="f-grid">
+        <div><label class="f-label">Current Expiration</label><div class="f-readonly">May 12, 2026</div></div>
+        <div><label class="f-label">Proposed New Expiration</label><input type="date" class="f-input" id="ctx-newexp" value="2026-08-12"></div>
+      </div>
+      <label class="f-label">Context for client <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="Buyer conversations in progress, pipeline status, rationale…"></textarea>
+    `;
+  } else if(ct.id==='wrap-up'){
+    fields=`
+      <label class="f-label">Result</label>
+      <select class="f-input" id="ctx-outcome"><option>Closed — Sale Completed</option><option>Expired</option><option>Other</option></select>
+      <label class="f-label">Notes <span style="font-weight:300;color:var(--text-light);">Optional</span></label>
+      <textarea class="f-input" id="ctx-notes" placeholder="Key outcomes, anything personal to include…"></textarea>
+      <div style="background:var(--off);border:1px solid var(--slate);border-radius:3px;padding:10px 12px;font-size:12px;color:var(--text-mid);">📋 A feedback survey link will be included automatically.</div>
+    `;
+  }
+
+  body.innerHTML=`
+    ${isJunior?`<div class="on-behalf">✓ Sending on behalf of ${lead.name} (${lead.role})</div>`:''}
+    ${showHint('compose-first','Add your notes and context before generating — the more you share, the better the draft. You can always edit the result.')}
+    <div class="f-sec-title" style="margin-top:0;">Listing & Client</div>
+    <div class="f-grid">
+      <div><label class="f-label">Listing</label><div class="f-readonly">${l.name}</div></div>
+      <div><label class="f-label">Client</label><div class="f-readonly">${l.client}</div></div>
+      <div><label class="f-label">From</label><div class="f-readonly">${sendAs.name}</div></div>
+      <div><label class="f-label">Days on Market</label><div class="f-readonly">${ct.id==='om-review'?'N/A — pre-launch':l.dom+' days'}</div></div>
+    </div>
+    ${ct.id!=='live-market'?`<div class="f-sec-title">${ct.label} Details</div>`:''}
+    ${fields}
+  `;
+  ftr.innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-accent" onclick="generateComm()">Generate Draft →</button>`;
+}
+
+function setBwClosing(mode){
+  S.bwClosingMode=mode;
+  document.querySelectorAll('.toggle-btn').forEach((b,i)=>b.classList.toggle('on',i===(mode==='generate'?0:1)));
+  const customEl=document.getElementById('bw-closing-custom');
+  if(customEl)customEl.style.display=mode==='custom'?'block':'none';
+}
+
+function toggleTeamMember(id){
+  if(S.selectedTeamMembers.has(id))S.selectedTeamMembers.delete(id);
+  else S.selectedTeamMembers.add(id);
+  document.getElementById('tm-'+id).checked=S.selectedTeamMembers.has(id);
+}
+
+function simulateAttachPre(){
+  const l=getListing(S.modal.listingId);const ct=S.modal.type;
+  S.attachedFile=ct.id==='extension'?`${l.name} — Extension Amendment.pdf`:`${l.name} — OM Draft v${Math.floor(Math.random()*2)+1}.pdf`;
+  const label=document.getElementById('attach-label-pre');const tag=document.getElementById('attach-tag-pre');const row=document.getElementById('attach-row-pre');
+  if(label)label.textContent=S.attachedFile;if(tag)tag.textContent='✓ Attached';
+  if(row){row.style.borderColor='var(--green)';row.style.background='var(--green-bg)';}
+}
+
+function simulateAttach(){
+  const l=getListing(S.modal.listingId);const ct=S.modal.type;
+  S.attachedFile=ct.id==='extension'?`${l.name} — Extension Amendment.pdf`:`${l.name} — OM Draft v${Math.floor(Math.random()*2)+1}.pdf`;
+  const label=document.getElementById('attach-label');const tag=document.getElementById('attach-tag');const row=document.getElementById('attach-row');
+  if(label)label.textContent=S.attachedFile;if(tag)tag.textContent='✓ Attached';
+  if(row){row.style.borderColor='var(--green)';row.style.background='var(--green-bg)';}
+}
+
+function editPrefs(){
+  const prefs=S.prefs[S.activeMember]||{};
+  document.getElementById('modal-title').textContent='Email Preferences';
+  document.getElementById('modal-body').innerHTML=`
+    <div style="margin-bottom:6px;font-size:13px;color:var(--text-mid);">These preferences are remembered and applied to every email you generate.</div>
+    <div class="f-sec-title" style="margin-top:12px;">Opening Style</div>
+    <input type="text" class="f-input" id="pref-opening" value="${prefs.opening||'Hi [name],'}" placeholder="e.g. Hi [name], or Good morning [name],">
+    <div class="f-sec-title">Closing Style</div>
+    <input type="text" class="f-input" id="pref-closing" value="${prefs.closing||'More soon,'}" placeholder="e.g. More soon, or Best Regards,">
+    <div class="f-sec-title">Tone Notes</div>
+    <textarea class="f-input" id="pref-style" placeholder="e.g. Keep it direct and lead with numbers. Avoid filler phrases.">${prefs.style||''}</textarea>
+  `;
+  document.getElementById('modal-ftr').innerHTML=`<button class="btn btn-ghost" onclick="openCompose(S.modal.listingId,S.modal.typeId)">Cancel</button><button class="btn btn-accent" onclick="savePrefs()">Save Preferences</button>`;
+}
+
+function savePrefs(){
+  S.prefs[S.activeMember]={
+    opening:document.getElementById('pref-opening')?.value||'Hi [name],',
+    closing:document.getElementById('pref-closing')?.value||'More soon,',
+    style:document.getElementById('pref-style')?.value||'',
+  };
+  document.getElementById('modal-title').textContent=S.modal.type.label;
+  renderModalBody();
+}
+
+function generateComm(){
+  const {listing:l,type:ct}=S.modal;
+  const member=getMember(S.activeMember);const lead=getLead();const sendAs=member.lead?member:lead;
+  const prefs=S.prefs[S.activeMember]||{};
+
+  // Capture all form values before generating (DOM will be replaced)
+  const ctx={
+    notes:document.getElementById('ctx-notes')?.value||'',
+    leads:document.getElementById('ctx-leads')?.value||'0',
+    lois:document.getElementById('ctx-lois')?.value||'0',
+    feedback:document.getElementById('ctx-feedback')?.value||'',
+    nextsteps:document.getElementById('ctx-nextsteps')?.value||'',
+    round:document.getElementById('ctx-round')?.value||'1',
+    deadline:document.getElementById('ctx-deadline')?.value||'',
+    newexp:document.getElementById('ctx-newexp')?.value||'',
+    sigurl:document.getElementById('ctx-sigurl')?.value||l.listingUrl||'',
+    crexiurl:document.getElementById('ctx-crexiurl')?.value||l.crexiUrl||'',
+    outcome:document.getElementById('ctx-outcome')?.value||'Closed',
+    metricLabel:document.getElementById('ctx-metric-label')?.value||'',
+    metricVal:document.getElementById('ctx-metric-val')?.value||'',
+    customClosing:document.getElementById('ctx-custom-closing')?.value||'',
+    extraMember:document.getElementById('ctx-extra-member')?.value||'',
+    omlink:document.getElementById('ctx-omlink')?.value||'',
+    bwLeads:document.getElementById('bw-leads')?.checked!==false,
+    bwLOIs:document.getElementById('bw-lois')?.checked!==false,
+  };
+  S.lastCtx=ctx; // store for fallback
+
+  S.generating=true;renderModalBody();
+
+  const fmtD=d=>d?new Date(d).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'';
+  const today=new Date();
+  const mm=String(today.getMonth()+1).padStart(2,'0');
+  const dd=String(today.getDate()).padStart(2,'0');
+  const yy=String(today.getFullYear()).slice(2);
+  const selectedTeam=TEAM.filter(m=>S.selectedTeamMembers.has(m.id));
+
+  const sys=`You write professional client email communications for Sands Investment Group (SIG) commercial real estate brokers. Return ONLY valid JSON with keys "subject" and "body". No markdown, no code fences. Body uses plain text with \n\n between paragraphs. Voice: direct, warm, trusted advisor. No filler. No "I hope this finds you well." Address client by first name only. Opening style: "${prefs.opening||'Hi [name],'}" · Closing: "${prefs.closing||'More soon,'}" then broker name on new line.`;
+
+  let usr='';
+  if(ct.id==='welcome'){
+    const teamList=selectedTeam.map(m=>{const ri=document.getElementById('tr-'+m.id);return '• '+m.name+' — '+(ri?ri.value:m.dealRole);}).join('\n')+(ctx.extraMember?'\n• '+ctx.extraMember:'');
+    usr=`Write a Welcome + Meet the Team email.\nSubject: Your New Listing with Sands Investment Group\nOpen: "${prefs.opening||'Hi'} ${l.clientFirst}," then a warm one-line opener about representing ${l.name}.\nInclude what happens next: Property immediately added to Early Access on SandsIG.com while marketing is in production (photography, OM creation), then full market launch.\nTeam introduction as bullet list:\n${teamList}\nDO NOT mention SIGnature Group.\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name}\nPERSONAL NOTE TO WEAVE IN: ${ctx.notes||'None'}`;
+  } else if(ct.id==='mktg-process'){
+    usr=`Write a Marketing Process Overview email.\nSubject: Marketing Process Overview\nGive the client a clear timeline preview:\nFirst 36 Business Hours: Listing added to Early Access on SandsIG.com, photography scheduled, OM submitted to marketing\nWeek 1: Photography, OM creation, initial creative review\nWeek 2: OM finalized and sent to client for approval, property moves to Active on SandsIG.com\nWeek 3: Live on CoStar, LoopNet, and Crexi. Targeted e-blast to qualified buyers. Paid digital marketing activated.\nNO mention of social media.\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name}\nADJUSTMENTS: ${ctx.notes||'None'}`;
+  } else if(ct.id==='om-review'){
+    usr=`Write an OM review request email to the client. Round ${ctx.round} of review.\nSubject: ${l.name} — OM${Number(ctx.round)>1?' (Round '+ctx.round+')':''} Ready for Your Review (Deadline: ${fmtD(ctx.deadline)})\nThis is the OM draft sent to the CLIENT for feedback — NOT to buyers. ${S.attachedFile?'OM is attached as '+S.attachedFile+'.':''}\nAsk for feedback by ${fmtD(ctx.deadline)}. Keep it short and professional.\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name} | ROUND: ${ctx.round} | NOTES: ${ctx.notes||'None'}`;
+  } else if(ct.id==='live-market'){
+    usr=`Write a Live on Market email.\nSubject: ${l.name} is Live on SandsIG.com\nProperty is now live. Include these direct links: SandsIG.com: ${ctx.sigurl} and Crexi: ${ctx.crexiurl}. Also live on CoStar and LoopNet.\nInclude SIGnature Group signup prompt — invite client to join at sandsig.com/signature-group to view their listing on SandsIG.com. Do NOT mention tracking activity or audience size or marketing statistics.\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name} | NOTES: ${ctx.notes||'None'}`;
+  } else if(ct.id==='bi-weekly'){
+    const closingInstr=S.bwClosingMode==='custom'&&ctx.customClosing?`Closing: Use exactly: "${ctx.customClosing}" then new line: "${sendAs.name}"`:`Closing: "${prefs.closing||'More soon,'}" then new line: "${sendAs.name}"`;
+    const actLines=[];
+    if(ctx.bwLeads)actLines.push('New Inquiries (14 days): '+ctx.leads);
+    if(ctx.bwLOIs)actLines.push('Active LOIs: '+ctx.lois);
+    if(ctx.metricLabel&&ctx.metricVal)actLines.push(ctx.metricLabel+': '+ctx.metricVal);
+    usr=`Write a bi-weekly listing update.\nSubject: ${mm}.${dd}.${yy} ${l.name} Update\nStructure: Brief high-level summary (2-3 short paragraphs max). Lead with the key headline number or insight. Reference that a detailed PDF report is attached for the full breakdown. End with next steps. Keep it short — the PDF is the detailed read.\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name} | LIST PRICE: ${l.price} | CAP RATE: ${l.capRate} | DAYS ON MARKET: ${l.dom}\nACTIVITY: ${actLines.length?actLines.join(', '):'None provided'}\nBROKER NOTES: ${ctx.notes||'None'} | BUYER FEEDBACK: ${ctx.feedback||'None'} | NEXT STEPS: ${ctx.nextsteps||'None'}\nSIG PLATFORM: 47 deals closed, 284K page views, 891 e-blasts, 28 avg leads/day\n${closingInstr}`;
+  } else if(ct.id==='extension'){
+    usr=`Write a listing extension request email. Tone: professional, direct, confident — NOT apologetic. Frame as proactive strategic recommendation.\n${S.attachedFile?'Amendment attached as '+S.attachedFile+'. Ask client to review and sign.':'Ask client to sign the amendment once sent.'}\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name} | DAYS ON MARKET: ${l.dom} | NEW EXPIRATION: ${fmtD(ctx.newexp)} | CONTEXT: ${ctx.notes||'Active buyer conversations in progress.'}`;
+  } else if(ct.id==='wrap-up'){
+    usr=`Write a wrap-up thank you email. Genuine, warm, forward-looking. Goes out regardless of outcome (closed, expired, or other).\nSubject: Thank You for Partnering with SIG — ${l.name}\nInclude this feedback survey link naturally: https://forms.gle/cqiN58B7WjDXXG3L9 ("2 minutes, your feedback helps us improve")\nBROKER: ${sendAs.name} | CLIENT: ${l.clientFirst} | PROPERTY: ${l.name} | OUTCOME: ${ctx.outcome} | NOTES: ${ctx.notes||'None'}`;
+  }
+
+  if(!usr){
+    // Fallback for any type without a prompt
+    S.generating=false;S.generated=true;
+    S.generatedContent=getDemoContent(ct.id,l,sendAs,ctx,prefs,mm,dd,yy);
+    S.emailSubject=S.generatedContent.subject;
+    renderModalBody();return;
+  }
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:sys,messages:[{role:'user',content:usr}]})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    const text=data.content?.map(b=>b.text||'').join('')||'';
+    if(!text)throw new Error('empty');
+    let parsed;
+    try{const clean=text.replace(/```json|```/g,'').trim();parsed=JSON.parse(clean);}
+    catch(e){parsed={subject:`${l.name} — ${ct.label}`,body:text};}
+    S.generating=false;S.generated=true;S.generatedContent=parsed;S.emailSubject=parsed.subject;renderModalBody();
+  })
+  .catch(()=>{
+    S.generating=false;S.generated=true;
+    const c=S.lastCtx||{};
+    const p=S.prefs[S.activeMember]||{};
+    S.generatedContent=getDemoContent(ct.id,l,sendAs,c,p,mm,dd,yy);
+    S.emailSubject=S.generatedContent.subject;
+    renderModalBody();
+  });
+}
+
+function getDemoContent(ct_id,l,sendAs,ctx,prefs,mm,dd,yy){
+  const fmtD=d=>{try{return new Date(d).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});}catch(e){return d||'';}};
+  const cl=prefs.closing||'More soon,';
+  const selectedTeam=TEAM.filter(m=>S.selectedTeamMembers.has(m.id));
+  const demos={
+    'welcome':{
+      subject:'Your New Listing with Sands Investment Group',
+      body:`Hi ${l.clientFirst},\n\nI'm grateful for the opportunity to represent you and look forward to working together on ${l.name}.\n\nOur team is already moving. Your property has been added to Early Access on SandsIG.com for our VIP investor network while we get the full marketing package into production:\n\n• Photography & aerial image capture\n• Custom Offering Memorandum creation\n• Full market launch across SandsIG.com, CoStar, LoopNet, and Crexi\n• Targeted e-blast to qualified buyers\n\nYour dedicated SIG team:\n${selectedTeam.map(m=>{const ri=document.getElementById('tr-'+m.id);return '• '+m.name+' — '+(ri?ri.value:m.dealRole);}).join('\n')}${ctx.extraMember?'\n• '+ctx.extraMember:''}\n\n${cl}\n${sendAs.name}`
+    },
+    'mktg-process':{
+      subject:'Marketing Process Overview',
+      body:`Hi ${l.clientFirst},\n\nHere's what to expect over the next few weeks for ${l.name}:\n\nFirst 36 Business Hours\n• Listing added to Early Access on SandsIG.com\n• Photography scheduled\n• OM submitted to our marketing team\n\nWeek 1\n• Photography\n• OM creation and initial creative review\n\nWeek 2\n• OM finalized and sent to you for approval\n• Property moves to Active on SandsIG.com\n\nWeek 3\n• Live on CoStar, LoopNet, and Crexi\n• Targeted e-blast to qualified buyers\n• Paid digital marketing activated\n\nPlease let us know if you have any questions.\n\n${cl}\n${sendAs.name}`
+    },
+    'om-review':{
+      subject:`${l.name} — OM${Number(ctx.round)>1?' (Round '+ctx.round+')':''} Ready for Your Review (Deadline: ${fmtD(ctx.deadline)})`,
+      body:`Hi ${l.clientFirst},\n\n${S.attachedFile?'Attached is':'Here is'} the${Number(ctx.round)>1?' updated round '+ctx.round+' of the':' first draft of the'} Offering Memorandum for ${l.name}.\n\nPlease review and share any feedback by ${fmtD(ctx.deadline)} so we can keep the launch timeline on track.\n\n${ctx.notes?ctx.notes+'\n\n':''}Happy to connect for a quick call if you'd like to talk through anything before responding.\n\n${cl}\n${sendAs.name}`
+    },
+    'live-market':{
+      subject:`${l.name} is Live on SandsIG.com`,
+      body:`Hi ${l.clientFirst},\n\n${l.name} is officially live on the market as of today.\n\nYour listing is available here:\n• SandsIG.com: ${ctx.sigurl||l.listingUrl}\n• Crexi: ${ctx.crexiurl||l.crexiUrl}\n\nWe're also live on CoStar and LoopNet, and our targeted e-blast is going out today to active buyers in our network.\n\nI'd also like to invite you to join The SIGnature Group at sandsig.com/signature-group — it's where you can view your listing on SandsIG.com and access exclusive market insights.\n\nYou'll receive your first bi-weekly update in two weeks. I'll be in touch as meaningful activity comes in.\n\n${cl}\n${sendAs.name}`
+    },
+    'bi-weekly':{
+      subject:`${mm}.${dd}.${yy} ${l.name} Update`,
+      body:`Hi ${l.clientFirst},\n\nAttached is your bi-weekly marketing update on ${l.name} — including a full breakdown of SIG team activity, buyer feedback, and next steps.\n\nThe headline: ${ctx.leads||0} new inquiries over the past 14 days${Number(ctx.lois||0)>0?' and '+ctx.lois+' active LOI'+(Number(ctx.lois)>1?'s':'')+' outstanding':''}.${ctx.feedback?' '+ctx.feedback:''}\n\nNext Steps\n${ctx.nextsteps||'Continue national outreach and follow up with active inquiries. Full detail is in the attached report.'}\n\n${cl}\n${sendAs.name}`
+    },
+    'extension':{
+      subject:`${l.name} — Listing Agreement Extension`,
+      body:`Hi ${l.clientFirst},\n\nI'm reaching out to recommend extending the listing agreement for ${l.name} beyond the current expiration date.\n\n${ctx.notes||'We have active buyer conversations in progress and strong pipeline momentum'}. Extending through ${fmtD(ctx.newexp)} gives us the runway to bring those conversations to the right conclusion.\n\n${S.attachedFile?'I\'ve attached the amendment for your review and signature. ':''}Please let me know if you have any questions before signing.\n\n${cl}\n${sendAs.name}`
+    },
+    'wrap-up':{
+      subject:`Thank You for Partnering with SIG — ${l.name}`,
+      body:`Hi ${l.clientFirst},\n\nI wanted to reach out and express my sincere gratitude for the opportunity to represent ${l.name}.\n\n${ctx.notes||"Working with you has been a genuine pleasure and I look forward to staying in touch as you think about what's next."}\n\nWhen you have two minutes, I'd love to hear about your experience: https://forms.gle/cqiN58B7WjDXXG3L9 — it's quick and your feedback genuinely helps us improve.\n\n${cl}\n${sendAs.name}`
+    },
+  };
+  return demos[ct_id]||{subject:`${l.name} — ${ct_id}`,body:'Email content here.'};
+}
+function regenerate(){S.generated=false;S.generatedContent=null;renderModalBody();}
+
+function simulateSend(){
+  const {listing:l,type:ct}=S.modal;
+  const member=getMember(S.activeMember);const lead=getLead();const sendAs=member.lead?member:lead;
+  const editedBody=document.getElementById('editable-body')?.innerText||S.generatedContent?.body||'';
+  const finalSubject=document.getElementById('eh-subject')?.value||S.generatedContent?.subject||ct.label;
+  const newEntry={type:ct.id,date:new Date().toISOString().slice(0,10),sentBy:S.activeMember,subject:finalSubject,preview:editedBody.slice(0,200),logged:true};
+  const hist=getHistEntry(l.id);if(hist)hist.history.push(newEntry);
+
+  // Generate PDF for bi-weekly
+  let pdfGenerated=false;
+  if(ct.id==='bi-weekly'){
+    try{
+      const ctx=S.lastCtx||{};
+      const doc=generateBiweeklyPDF(l,ctx,sendAs,editedBody);
+      if(doc){
+        const fname='SIG-Update-'+l.name.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)+'-'+new Date().toISOString().slice(0,10)+'.pdf';
+        doc.save(fname);
+        S.lastPdfFilename=fname;
+        pdfGenerated=true;
+      }
+    }catch(e){console.warn('PDF generation error:',e);}
+  }
+
+  closeModal();
+  document.getElementById('send-title').textContent=ct.label+' Sent';
+  document.getElementById('send-sub').textContent=`Your email to ${l.clientFirst} has been sent from ${sendAs.email} and logged to the ${l.name} communication timeline.${pdfGenerated?' The detailed PDF report has been generated and attached.':''}`;
+  // Show PDF download note if generated
+  setTimeout(()=>{
+    const signalEl=document.querySelector('.send-signal');
+    if(signalEl&&pdfGenerated){
+      signalEl.innerHTML='✓ Gmail send confirmed · PDF report attached · Logged to timeline';
+    } else if(signalEl){
+      signalEl.innerHTML='✓ Gmail send confirmed · Logged to timeline';
+    }
+  },50);
+  document.getElementById('send-overlay').style.display='flex';
+  launchConfetti();
+  if(S.selectedListing)renderDetail();
+  renderListings();
+}
+
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas');const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const pieces=[];const colors=['#0D2137','#2B5C81','#278989','#1A7A4A','#D4A017','#C0392B','#FFFFFF','#90B8D8'];
+  for(let i=0;i<160;i++)pieces.push({x:Math.random()*canvas.width,y:-20,r:Math.random()*6+3,d:Math.random()*4+2,color:colors[Math.floor(Math.random()*colors.length)],tilt:Math.random()*10-5,tiltAngle:0,tiltAngleInc:Math.random()*.07+.05,opacity:1});
+  let frame=0;
+  function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);pieces.forEach(p=>{p.tiltAngle+=p.tiltAngleInc;p.y+=p.d;p.x+=Math.sin(p.tiltAngle)*2;p.tilt=Math.sin(p.tiltAngle)*12;if(frame>90)p.opacity-=.01;ctx.save();ctx.globalAlpha=Math.max(0,p.opacity);ctx.beginPath();ctx.fillStyle=p.color;ctx.ellipse(p.x,p.y,p.r,p.r*.5,p.tilt*Math.PI/180,0,2*Math.PI);ctx.fill();ctx.restore();});frame++;if(frame<180)requestAnimationFrame(draw);else ctx.clearRect(0,0,canvas.width,canvas.height);}
+  draw();
+}
+
+function closeSendOverlay(){document.getElementById('send-overlay').style.display='none';const c=document.getElementById('confetti-canvas');c.getContext('2d').clearRect(0,0,c.width,c.height);}
+
+function previewEmail(listingId,date){
+  const hist=getHistEntry(listingId);if(!hist)return;
+  const item=hist.history.find(i=>i.date===date);if(!item)return;
+  const m=getMember(item.sentBy);
+  document.getElementById('modal-title').textContent=item.subject;
+  document.getElementById('modal-body').innerHTML=`<div style="margin-bottom:10px;font-size:12px;color:var(--text-light);">Sent ${fmt(item.date)}${m?' by '+m.name:''}</div><div class="gen-email"><div class="gen-body">${item.preview}</div></div>`;
+  document.getElementById('modal-ftr').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Close</button>`;
+  document.getElementById('modal').style.display='flex';
+}
+
+function previewBwPDF(){
+  const {listing:l,type:ct}=S.modal||{};
+  if(!l)return;
+  const member=getMember(S.activeMember);const lead=getLead();const sendAs=member.lead?member:lead;
+  const ctx=S.lastCtx||{};
+  try{
+    const doc=generateBiweeklyPDF(l,ctx,sendAs,'');
+    if(doc){
+      // Open in new tab
+      const blob=doc.output('blob');
+      const url=URL.createObjectURL(blob);
+      window.open(url,'_blank');
+      setTimeout(()=>URL.revokeObjectURL(url),10000);
+    }
+  }catch(e){
+    alert('PDF preview requires the full environment. In the live version, this will open the PDF for review before sending.');
+  }
+}
+
+function rteExec(cmd){document.execCommand(cmd,false,null);document.getElementById('editable-body')?.focus();}
+function rteLink(){const url=prompt('Enter URL:','https://');if(url)document.execCommand('createLink',false,url);}
+
+// ── PDF Generator (bi-weekly) ─────────────────────────────────────────────
+function generateBiweeklyPDF(listing,ctx,sendAs,generatedBody){
+  if(typeof window.jspdf==='undefined'&&typeof jspdf==='undefined'){console.warn('jsPDF not loaded');return null;}
+  const {jsPDF}=window.jspdf||jspdf;
+  const l=listing;
+  const doc=new jsPDF({unit:'pt',format:'letter'});
+  const W=612,ML=48,MR=48,CW=W-ML-MR;
+  let y=0;
+  const NAVY=[13,33,55],BLUE=[43,92,129],TEAL=[39,137,137];
+  const GRAY=[70,84,89],LGRAY=[122,138,144],OW=[247,248,249],SG=[234,233,235];
+  const WHITE=[255,255,255];
+
+  // Header
+  doc.setFillColor(...NAVY);doc.rect(0,0,W,52,'F');
+  doc.setFillColor(...BLUE);doc.rect(0,49,W,3,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...WHITE);
+  doc.setCharSpace(1.6);doc.text('SANDS INVESTMENT GROUP',ML,22);doc.setCharSpace(0);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(160,184,200);
+  doc.text('Listing Update  ·  '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),ML,38);
+  y=76;
+
+  // Property title
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(...NAVY);
+  const pL=doc.splitTextToSize(l.name,CW);doc.text(pL,ML,y);y+=pL.length*20+2;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...LGRAY);
+  doc.text(l.address+'  ·  '+l.client,ML,y);y+=18;
+  doc.setDrawColor(...SG);doc.setLineWidth(0.5);doc.line(ML,y,W-MR,y);y+=18;
+
+  function chkPg(n){if(y+n>760){doc.addPage();y=48;}}
+
+  // Property Snapshot
+  chkPg(80);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);doc.setCharSpace(1.4);
+  doc.text('PROPERTY SNAPSHOT',ML,y);doc.setCharSpace(0);
+  doc.setDrawColor(...SG);doc.setLineWidth(0.5);doc.line(ML,y+3,W-MR,y+3);y+=16;
+  const snapStats=[
+    {label:'List Price',value:l.price},
+    {label:'Cap Rate',value:l.capRate},
+    {label:'Days on Market',value:String(l.dom)},
+    {label:'Days to Expiry',value:String(l.daysUntilExp)},
+  ];
+  const cw2=(CW-(snapStats.length-1)*8)/snapStats.length,ch=46;
+  snapStats.forEach((st,i)=>{
+    const x=ML+i*(cw2+8);
+    doc.setFillColor(...OW);doc.roundedRect(x,y,cw2,ch,2,2,'F');
+    doc.setFillColor(...BLUE);doc.rect(x,y,cw2,3,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...LGRAY);doc.setCharSpace(0.9);
+    doc.text(st.label.toUpperCase(),x+10,y+14);doc.setCharSpace(0);
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(...NAVY);
+    doc.text(st.value,x+10,y+32);
+  });
+  y+=ch+18;
+
+  // Activity This Period
+  chkPg(60);
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);doc.setCharSpace(1.4);
+  doc.text('ACTIVITY THIS PERIOD',ML,y);doc.setCharSpace(0);
+  doc.setDrawColor(...SG);doc.setLineWidth(0.5);doc.line(ML,y+3,W-MR,y+3);y+=16;
+  const actRows=[];
+  if(ctx.bwLeads!==false)actRows.push({label:'New Inquiries (14 days)',value:String(ctx.leads||0)});
+  if(ctx.bwLOIs!==false)actRows.push({label:'Active LOIs',value:String(ctx.lois||0)});
+  if(ctx.metricLabel&&ctx.metricVal)actRows.push({label:ctx.metricLabel,value:ctx.metricVal});
+  doc.setFillColor(...BLUE);doc.rect(ML,y-2,3,actRows.length*24+4,'F');
+  actRows.forEach(row=>{
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...GRAY);
+    doc.text(row.label,ML+12,y+10);
+    doc.setFont('helvetica','bold');doc.setTextColor(...NAVY);
+    doc.text(row.value,W-MR-doc.getTextWidth(row.value),y+10);
+    doc.setDrawColor(244,245,246);doc.setLineWidth(0.4);doc.line(ML+12,y+16,W-MR,y+16);
+    y+=24;
+  });
+  y+=10;
+
+  // SIG Platform
+  chkPg(100);
+  const bh=78;doc.setFillColor(...NAVY);doc.roundedRect(ML,y,CW,bh,3,3,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);doc.setCharSpace(1.2);
+  doc.text('THE SIG PLATFORM — LAST 30 DAYS',ML+10,y+14);doc.setCharSpace(0);
+  const platStats=[{label:'Deals Closed',value:'47'},{label:'Page Views',value:'284K'},{label:'E-Blasts Sent',value:'891'},{label:'Avg. Leads/Day',value:'28'}];
+  const cw3=(CW-8*(platStats.length-1)-20)/platStats.length;const sy=y+22;
+  platStats.forEach((st,i)=>{
+    const cx=ML+10+i*(cw3+8);
+    doc.setFillColor(30,65,95);doc.roundedRect(cx,sy,cw3,40,2,2,'F');
+    doc.setFillColor(...BLUE);doc.rect(cx,sy+38,cw3,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(160,160,160);doc.setCharSpace(0.8);
+    doc.text(st.label.toUpperCase(),cx+6,sy+10);doc.setCharSpace(0);
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(...WHITE);
+    doc.text(st.value,cx+6,sy+30);
+  });
+  y+=bh+16;
+
+  // Broker Notes
+  if(ctx.notes){
+    chkPg(50);
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);doc.setCharSpace(1.4);
+    doc.text('BROKER NOTES',ML,y);doc.setCharSpace(0);
+    doc.setDrawColor(...SG);doc.setLineWidth(0.5);doc.line(ML,y+3,W-MR,y+3);y+=14;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...GRAY);
+    const noteLines=doc.splitTextToSize(ctx.notes,CW);doc.text(noteLines,ML,y);y+=noteLines.length*14+8;
+  }
+
+  // Next Steps
+  if(ctx.nextsteps){
+    chkPg(50);
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...BLUE);doc.setCharSpace(1.4);
+    doc.text('NEXT STEPS',ML,y);doc.setCharSpace(0);
+    doc.setDrawColor(...SG);doc.setLineWidth(0.5);doc.line(ML,y+3,W-MR,y+3);y+=14;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...GRAY);
+    const nsLines=doc.splitTextToSize(ctx.nextsteps,CW);doc.text(nsLines,ML,y);y+=nsLines.length*14+8;
+  }
+
+  // Footer on all pages
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);doc.setFillColor(...OW);doc.rect(0,762,W,50,'F');
+    doc.setDrawColor(...SG);doc.setLineWidth(0.4);doc.line(ML,764,W-MR,764);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...LGRAY);
+    doc.text('Sands Investment Group  ·  sandsig.com',ML,778);
+    doc.text('Page '+p+' of '+pages,W-MR,778,{align:'right'});
+  }
+
+  return doc;
+}
+
+function closeModal(){document.getElementById('modal').style.display='none';S.modal=null;S.generating=false;S.generated=false;S.generatedContent=null;}
+function closeModalOutside(e){if(e.target===document.getElementById('modal'))closeModal();}
+
+// ── ONBOARDING ────────────────────────────────────────────────────────────────
+function dismissOnboarding(){
+  const el=document.getElementById('onb-overlay');
+  if(el)el.style.display='none';
+  sessionStorage.setItem('sig_onboarded','1');
+}
+function checkOnboarding(){
+  if(sessionStorage.getItem('sig_onboarded')){
+    const el=document.getElementById('onb-overlay');
+    if(el)el.style.display='none';
+  }
+}
+
+// ── HELP PANEL ────────────────────────────────────────────────────────────────
+function toggleHelp(){
+  const panel=document.getElementById('help-panel');
+  panel.style.display=panel.style.display==='none'?'flex':'none';
+  if(panel.style.display==='flex')panel.style.flexDirection='column';
+}
+function toggleHelpSection(id){
+  const body=document.getElementById(id+'-body');
+  const toggle=document.getElementById(id+'-toggle');
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  toggle.textContent=isOpen?'▶':'▼';
+}
+
+// ── CONTEXTUAL HINTS ──────────────────────────────────────────────────────────
+const HINTS_SHOWN=new Set();
+function showHint(id,html){
+  if(HINTS_SHOWN.has(id))return '';
+  HINTS_SHOWN.add(id);
+  return `<div class="ctx-hint" id="hint-${id}"><span>💡</span><span style="flex:1;">${html}</span><button class="ctx-hint-dismiss" onclick="document.getElementById('hint-${id}').remove()">×</button></div>`;
+}
+
+// ── ATTACHMENT CHIP ───────────────────────────────────────────────────────────
+function attachmentChipHTML(filename){
+  return `<div class="attach-chip"><span class="attach-chip-icon">📎</span><span class="attach-chip-name">${filename}</span><span class="attach-chip-size">PDF · Attached</span></div>`;
+}
+
+init();
+checkOnboarding();
+</script>
+
+<!-- ONBOARDING OVERLAY -->
+<div id="onb-overlay" class="onb-overlay">
+  <div class="onb-card">
+    <div class="onb-hdr">
+      <div class="onb-logo">Sands Investment Group · Client Communications</div>
+      <div class="onb-headline">Welcome to Client Communications</div>
+      <div class="onb-sub">Everything you need to stay in sync with your clients — from listing signed to deal closed. Here's how it works.</div>
+    </div>
+    <div class="onb-panels">
+      <div class="onb-panel">
+        <div class="onb-panel-icon">⚡</div>
+        <div class="onb-panel-title">Start with Action Required</div>
+        <div class="onb-panel-body">The top of your dashboard tells you exactly what's due and for which listing. <strong>Red = overdue. Amber = due today. Blue = next step.</strong> Start there every time you log in.</div>
+      </div>
+      <div class="onb-panel">
+        <div class="onb-panel-icon">📋</div>
+        <div class="onb-panel-title">Add context, then generate</div>
+        <div class="onb-panel-body">Each communication has pre-filled fields from your listing data. <strong>Add your notes, feedback, and next steps</strong> — the more context you give, the better the draft. You can always edit before sending.</div>
+      </div>
+      <div class="onb-panel">
+        <div class="onb-panel-icon">✉️</div>
+        <div class="onb-panel-title">Always check To / From / CC</div>
+        <div class="onb-panel-body">Before hitting Send, <strong>review the email header</strong> — confirm the client address, your sending address, and which teammates are CC'd. Emails send directly from your Gmail account.</div>
+      </div>
+      <div class="onb-panel">
+        <div class="onb-panel-icon">📬</div>
+        <div class="onb-panel-title">It sends from your Gmail</div>
+        <div class="onb-panel-body">When you send from this tool, the email goes out <strong>from your Gmail account</strong> and will appear in your Gmail Sent folder — just like any email you send manually.</div>
+      </div>
+    </div>
+    <div class="onb-ftr">
+      <button class="onb-skip" onclick="dismissOnboarding()">Skip for now</button>
+      <button class="btn btn-primary" onclick="dismissOnboarding()">Get Started →</button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP FAB + PANEL -->
+<button class="help-fab" id="help-fab" onclick="toggleHelp()" title="Help">?</button>
+<div class="help-panel" id="help-panel" style="display:none;">
+  <div class="help-panel-hdr">
+    <div class="help-panel-title">Help & Quick Reference</div>
+    <button class="help-panel-x" onclick="toggleHelp()">×</button>
+  </div>
+  <div class="help-body">
+
+    <div class="help-section">
+      <div class="help-section-hdr" onclick="toggleHelpSection('h1')">
+        <div class="help-section-label">Getting Started</div>
+        <div class="help-section-toggle" id="h1-toggle">▼</div>
+      </div>
+      <div class="help-section-body open" id="h1-body">
+        <ul>
+          <li>The <strong>Action Required</strong> queue at the top shows what's due across all your listings — start here every session.</li>
+          <li>Click any listing card to open its full communication timeline and send panel.</li>
+          <li>Switch between team members at the top to draft on behalf of a colleague.</li>
+        </ul>
+        <div class="help-tip">💡 Red = overdue · Amber = due today · Blue = next step</div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-hdr" onclick="toggleHelpSection('h2')">
+        <div class="help-section-label">Sending a Communication</div>
+        <div class="help-section-toggle" id="h2-toggle">▶</div>
+      </div>
+      <div class="help-section-body" id="h2-body">
+        <ul>
+          <li>Select the communication type from the right panel or Action Needed box.</li>
+          <li>Fill in any context fields — the more you add, the better the draft.</li>
+          <li>Click <strong>Generate Draft</strong> — the AI will draft the email using your inputs and SIG tone standards.</li>
+          <li><strong>Always review and edit</strong> the draft before sending. Use the toolbar for formatting.</li>
+          <li>Check the <strong>To / From / CC / Subject</strong> fields before hitting Send.</li>
+          <li>After sending, check your <strong>Gmail Sent folder</strong> — it will appear there.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-hdr" onclick="toggleHelpSection('h3')">
+        <div class="help-section-label">Bi-Weekly Update</div>
+        <div class="help-section-toggle" id="h3-toggle">▶</div>
+      </div>
+      <div class="help-section-body" id="h3-body">
+        <ul>
+          <li>Pull your inquiry and LOI counts from <strong>ReThink</strong> before starting.</li>
+          <li>Add broker notes, buyer feedback, and next steps for the best output.</li>
+          <li>The email is a <strong>short summary</strong>. A full-detail <strong>PDF report</strong> is automatically generated and attached when you send.</li>
+          <li>The PDF uses SIG brand formatting and downloads to your computer to simulate the attachment.</li>
+        </ul>
+        <div class="help-tip">💡 The PDF auto-downloads when you send — check your Downloads folder.</div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-hdr" onclick="toggleHelpSection('h4')">
+        <div class="help-section-label">Listing Extension</div>
+        <div class="help-section-toggle" id="h4-toggle">▶</div>
+      </div>
+      <div class="help-section-body" id="h4-body">
+        <ul>
+          <li><strong>Before opening the extension compose screen</strong>, have your amendment document ready.</li>
+          <li>Upload the amendment PDF <em>or</em> paste a DocuSign link on the first screen — this helps the AI reference it in the email.</li>
+          <li>An amendment generator is coming to <strong>SIGMA</strong> in a future release. For now, generate it separately and upload here.</li>
+        </ul>
+        <div class="help-tip">💡 No amendment yet? Paste your DocuSign link and the email will reference it automatically.</div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-hdr" onclick="toggleHelpSection('h5')">
+        <div class="help-section-label">Navigation</div>
+        <div class="help-section-toggle" id="h5-toggle">▶</div>
+      </div>
+      <div class="help-section-body" id="h5-body">
+        <ul>
+          <li><strong>Active Listings tab</strong> — your deal team's listings with status and next action.</li>
+          <li><strong>Communication History tab</strong> — searchable log of everything sent, plus upcoming scheduled e-blasts from SIG Marketing.</li>
+          <li>Click <strong>← All Listings</strong> from a detail view to return to the dashboard.</li>
+          <li>The <strong>Estimated Timeline</strong> panel on each listing shows target dates for each communication step based on your go-live date.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
